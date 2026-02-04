@@ -1,0 +1,857 @@
+/* Swipe Interface */
+.swipe-interface {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  min-height: calc(100vh - 90px); /* Account for navbar */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.swipe-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.swipe-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.profiles-remaining {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.swipe-card-stack {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  height: 600px;
+}
+
+.swipe-card-background {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 0;
+}
+
+/* Swipe Card */
+.swipe-card {
+  position: absolute;
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  cursor: grab;
+  z-index: 1;
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}
+
+.swipe-card-content {
+  padding: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.swipe-card-avatar {
+  width: 100%;
+  height: 300px;
+  border-radius: 15px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: #f0f0f0;
+}
+
+.swipe-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.swipe-card-info {
+  margin-bottom: 1rem;
+}
+
+.swipe-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.swipe-card-header h2 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: #333;
+}
+
+.swipe-card-age {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.swipe-card-intent {
+  font-size: 1rem;
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.swipe-card-bio {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.swipe-card-bio p {
+  margin: 0;
+  color: #555;
+  line-height: 1.6;
+}
+
+.swipe-card-section {
+  margin-bottom: 1.5rem;
+}
+
+.swipe-card-section h3 {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.swipe-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.interest-tag {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.interest-tag:hover {
+  background: #bbdefb;
+}
+
+.hobby-tag {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.hobby-tag:hover {
+  background: #e1bee7;
+}
+
+.personality-tag {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.personality-tag:hover {
+  background: #ffe0b2;
+}
+
+.swipe-card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #eee;
+}
+
+.swipe-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.swipe-button:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
+.swipe-button:hover {
+  transform: scale(1.15) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.swipe-button:active {
+  transform: scale(0.95);
+}
+
+.swipe-left {
+  background: #ff6b6b;
+  color: white;
+}
+
+.swipe-left:hover {
+  background: #ff5252;
+}
+
+.swipe-right {
+  background: #51cf66;
+  color: white;
+}
+
+.swipe-right:hover {
+  background: #40c057;
+}
+
+.swipe-hint {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #999;
+  border-top: 1px solid #eee;
+}
+
+/* Match Notification */
+.match-notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.match-notification {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.match-celebration {
+  margin-bottom: 2rem;
+}
+
+.match-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.match-celebration h2 {
+  font-size: 2.5rem;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.match-celebration p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.match-profiles {
+  margin-bottom: 2rem;
+}
+
+.match-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 15px;
+}
+
+.match-profile-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.match-profile-info {
+  flex: 1;
+  text-align: left;
+}
+
+.match-profile-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+}
+
+.match-profile-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.match-interests {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.match-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.match-button {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.match-button.primary {
+  background: #667eea;
+  color: white;
+}
+
+.match-button.primary:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+
+.match-button.secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.match-button.secondary:hover {
+  background: #e0e0e0;
+}
+
+/* Match List */
+.match-list {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.match-list-header {
+  margin-bottom: 2rem;
+}
+
+.match-list-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.match-count {
+  color: #666;
+  font-size: 1rem;
+}
+
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.match-card {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.match-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.match-card-avatar {
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.match-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 4rem;
+  color: #ccc;
+}
+
+.match-card-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.3rem;
+}
+
+.match-age {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.match-date {
+  color: #999;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.match-card-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag.small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.tag.more {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.match-card-action {
+  margin-top: auto;
+}
+
+.chat-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.chat-button:hover {
+  background: #5568d3;
+}
+
+/* Match Chat */
+.match-chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 90px); /* Account for navbar */
+  max-height: calc(100vh - 90px);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.match-chat .chat-header {
+  flex-shrink: 0;
+  min-height: auto;
+  max-height: 80px;
+}
+
+.match-chat .messages-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: calc(100vh - 160px);
+}
+
+.match-chat .message-input-container {
+  flex-shrink: 0;
+  max-height: 80px;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: #f0f0f0;
+}
+
+/* Empty States */
+.empty-profiles,
+.empty-matches {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-profiles h2,
+.empty-matches h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.empty-profiles p,
+.empty-matches p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.refresh-button,
+.primary-button {
+  padding: 0.75rem 2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-button:hover,
+.primary-button:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+
+/* Loading and Error States */
+.loading-spinner,
+.error-message {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  color: #d32f2f;
+}
+
+.retry-button {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+
+.retry-button:hover {
+  background: #5568d3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .swipe-interface {
+    padding: 1rem;
+  }
+
+  .swipe-header h1 {
+    font-size: 2rem;
+  }
+
+  .swipe-card-stack {
+    max-width: 100%;
+    height: 550px;
+  }
+
+  .swipe-card-content {
+    padding: 1rem;
+  }
+
+  .swipe-card-avatar {
+    height: 250px;
+  }
+
+  .swipe-card-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .swipe-button {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+
+  .swipe-card-actions {
+    gap: 1.5rem;
+    padding: 1rem 0;
+  }
+
+  .matches-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .match-list {
+    padding: 1rem;
+  }
+
+  .match-list-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .match-notification {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .match-celebration h2 {
+    font-size: 2rem;
+  }
+
+  .match-icon {
+    font-size: 4rem;
+  }
+
+  .matchmaking-tabs {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .tab-button {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  /* Touch-friendly buttons */
+  .swipe-button,
+  .match-button,
+  .chat-button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .swipe-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .swipe-card-stack {
+    height: 500px;
+  }
+
+  .swipe-card-avatar {
+    height: 200px;
+  }
+
+  .swipe-card-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .swipe-card-section h3 {
+    font-size: 0.9rem;
+  }
+
+  .tag {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .swipe-button {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  .match-card-avatar {
+    height: 150px;
+  }
+
+  .match-celebration h2 {
+    font-size: 1.75rem;
+  }
+
+  .match-icon {
+    font-size: 3.5rem;
+  }
+
+  .tab-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .swipe-card-stack {
+    height: 450px;
+  }
+
+  .swipe-card-avatar {
+    height: 180px;
+  }
+}
+
+/* Matchmaking Page */
+.matchmaking-page {
+  min-height: calc(100vh - 90px); /* Account for navbar */
+  background: #f5f5f5;
+}
+
+.matchmaking-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tab-button {
+  padding: 0.75rem 2rem;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.tab-button:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+.matchmaking-content {
+  min-height: calc(100vh - 80px);
+}
+
+/* Safety Action Buttons on Swipe Card */
+.swipe-card-safety-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.safety-action-button {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.safety-action-button:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+/* Header Action Buttons in Match Chat */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-action-button {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.header-action-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Action buttons in message bubbles */
+.action-report,
+.action-block {
+  opacity: 0.7;
+}
+
+.action-report:hover {
+  opacity: 1;
+  background-color: #fef2f2;
+}
+
+.action-block:hover {
+  opacity: 1;
+  background-color: #fef2f2;
+}
