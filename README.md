@@ -1,88 +1,188 @@
-# Ano - Anonymous Chat & Matchmaking Platform
+# Ano — Anonymous Chat Platform for IIT Indore
 
-An anonymous chatting and matchmaking platform exclusively for IIT Indore students. Ano enables students to communicate anonymously in public chatrooms and engage in Tinder-style matchmaking while maintaining complete anonymity through UUID-based identifiers.
+An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in` email required). Ano lets students communicate in real-time public chatrooms while staying completely anonymous through UUID-based identifiers, with an advanced reputation/gamification system, AI-powered content moderation, and multi-layered spam protection.
+
+> **Note:** Matchmaking is currently disabled in the UI while the matching algorithm is being improved. The backend code for matchmaking exists but the frontend routes are commented out.
 
 ## 📋 Table of Contents
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Development Setup](#development-setup)
-- [Environment Variables](#environment-variables)
-- [Running Tests](#running-tests)
-- [API Documentation](#api-documentation)
-- [WebSocket Events](#websocket-events)
-- [Deployment](#deployment)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [Documentation](#documentation)
+- [Features](#-features)
+- [Architecture](#️-architecture)
+- [Tech Stack](#️-tech-stack)
+- [Prerequisites](#-prerequisites)
+- [Quick Start](#-quick-start)
+- [Development Setup](#-development-setup)
+- [Environment Variables](#-environment-variables)
+- [Running Tests](#-running-tests)
+- [API Reference](#-api-reference)
+- [WebSocket Events](#-websocket-events)
+- [Project Structure](#-project-structure)
+- [Deployment](#-deployment)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
 
 ## ✨ Features
 
 ### Core Features
-- **Anonymous Authentication**: IIT Indore email verification (@iiti.ac.in) with JWT tokens
-- **Anonymous Profiles**: UUID-based profiles with interests, hobbies, and anonymized avatars
-- **Public Chatrooms**: Real-time group chat with typing indicators and read receipts
-- **Matchmaking**: Tinder-style swipe interface for anonymous connections
-- **Match Chat**: Private one-on-one anonymous messaging with matches
-- **Safety Features**: User reporting, blocking, and admin moderation tools
-- **Search**: Full-text search across message history
-- **Themes**: Light and dark mode support
-- **Responsive Design**: Mobile-first design optimized for all devices
+- **Anonymous Authentication** — IIT Indore email (`@iiti.ac.in`) verification with email OTP; UUID-based user IDs throughout
+- **Anonymous Profiles** — UUID `anonymous_id` as the only public identifier; stores age, interests, hobbies, personality tags, relationship intent, bio, and avatar
+- **Public Chatrooms** — Real-time group chat via Django Channels WebSockets with typing indicators, read receipts, message reactions (emoji), edit/delete, and pinned messages
+- **Message Search** — Full-text PostgreSQL search across chatroom message history
+- **Match Chat** — Private one-on-one messaging between matched users (backend complete; frontend temporarily disabled)
+- **Matchmaking** — Tinder-style swipe interface for anonymous connections (backend complete; frontend disabled pending algorithm improvements)
+- **Password Reset** — Secure token-based password reset via email (1-hour expiry)
+- **Dark/Light Mode** — Full theme toggle with system-aware default
+- **Polls** — Campus Legend–tier users can create polls in chatrooms
+- **Confessions** — Campus Legend–tier users can submit moderated anonymous confessions
+
+### Reputation & Gamification System
+- **Rank Tiers**: Fresher → Sophomore (100 XP) → Senior (500 XP) → Campus Legend (1000 XP)
+- **Logarithmic level progression**: Level N requires `100 × 1.5ⁿ` XP
+- **Wilson Score** ranking for messages (statistically sound upvote/downvote ranking)
+- **Reputation points** awarded for upvotes (+5), deducted for downvotes (-2) and validated reports (-50)
+- **Real-time reputation updates** via WebSocket notifications
+
+### AI Content Moderation
+- **OpenAI Moderation API** — Primary moderation with circuit-breaker protection (opens after 3 failures, recovers in 5 minutes)
+- **Local fallback moderation** — `better-profanity` + `vaderSentiment` for offline/fallback scenarios
+- **Heat System** — Escalating penalty multipliers for repeat offenders (Clean → Warm → Hot → Burning → Scorching → Inferno)
+- **Shadowbanning** — Automatic temporary restrictions (24h base, escalated by heat level, capped at 168h)
+- **Rehabilitation** — Heat level reduces after 14 days of clean behavior
+- **Real-time moderation notifications** via WebSocket
+
+### Anti-Spam Protection (Multi-layered)
+- **Rate limiting**: 15 messages / 10s window; 30 typing events / 10s
+- **Burst detection**: 7 messages in 3s (higher threshold for short messages)
+- **Duplicate detection**: Blocks 3+ identical messages in 60s (smart exemptions for "ok", "yes", etc.)
+- **Similarity detection**: Levenshtein distance > 92% similarity across last 5 messages (skips short messages and conversational patterns)
+- **Pattern detection**: Catches excessive caps (>80%), character repetition (7+ same chars), spam keywords, URL spam (3+ URLs)
+- **Escalating penalties**: Warning → Temp mute (3 min) → Shadowban
 
 ### Security Features
-- Argon2 password hashing
-- JWT authentication with refresh tokens
-- CSRF protection
-- Rate limiting on all endpoints
-- Input validation and sanitization
-- HTTPS enforcement
-- File upload validation and scanning
+- Argon2 password hashing (primary), PBKDF2 fallback
+- JWT authentication with rotating refresh tokens + token blacklisting
+- Refresh tokens stored in HTTP-only cookies
+- CSRF protection with trusted origin validation
+- Custom security middleware: HTTPS redirect, security headers, anonymous logging
+- Identity hashing for logs (no personal data in log output)
+- Rate limiting per endpoint (5 logins/5 min, 1000 API req/hour, etc.)
+- File upload validation with `python-magic` (MIME type checking, 10 MB limit)
+- XSS, clickjacking, content-type sniffing protection headers
+- HSTS with subdomains + preload in production
+
+### Admin & Monitoring
+- **Django Admin** panel with custom admin apps
+- **Admin Dashboard** (frontend) — platform metrics, report management, user moderation panel, broadcast messages
+- **Health check endpoints** — `/api/health/` (DB ping) and `/api/monitoring/` (Celery, Redis, DB, task queues)
+- **Performance monitoring** — execution time and success rate tracking for all Celery tasks
+- **Circuit breakers** for OpenAI API and email service
+
+---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Client (React + TypeScript)               │
-│  Zustand State Management | Framer Motion | Tailwind CSS    │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│              Client (React 19 + TypeScript)                   │
+│  Zustand State  |  Framer Motion  |  Tailwind CSS v4         │
+│  React Router v7  |  Axios  |  Lucide React                  │
+└──────────────────────────────────────────────────────────────┘
                             │
-                    HTTPS / WebSocket
+                   HTTPS / WebSocket (WSS)
                             │
-┌─────────────────────────────────────────────────────────────┐
-│                    API Gateway (Nginx)                       │
-│         CORS | Rate Limiting | SSL Termination              │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Nginx (Reverse Proxy)                       │
+│         CORS  |  Rate Limiting  |  SSL Termination           │
+└──────────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┴───────────────────┐
         │                                       │
 ┌───────▼────────┐                    ┌────────▼────────┐
 │   REST API     │                    │   WebSocket     │
-│  (Django DRF)  │                    │   (Channels)    │
+│  (Django DRF)  │                    │  (Channels 4)   │
 └───────┬────────┘                    └────────┬────────┘
         │                                      │
-┌───────▼──────────────────────────────────────▼─────────┐
-│              Django Application Layer                   │
-│  Auth | Profiles | Chat | Matchmaking | Reports        │
-└─────────────────────────────────────────────────────────┘
+┌───────▼──────────────────────────────────────▼──────────┐
+│                Django 5.2 Application Layer              │
+│  Auth | Profiles | Chat | Matchmaking | Reports         │
+│  Reputation | Moderation | Security | Admin Dashboard   │
+└──────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┴───────────────────┐
         │                                       │
 ┌───────▼────────┐                    ┌────────▼────────┐
 │   PostgreSQL   │                    │     Redis       │
-│   (Database)   │                    │  (Cache/Queue)  │
+│  (Primary DB   │                    │  Cache | Celery │
+│  + Full-text   │                    │  Broker | WS    │
+│    search)     │                    │  Channel Layer  │
 └────────────────┘                    └─────────────────┘
+                            │
+              ┌─────────────┴──────────────┐
+              │      Celery Workers        │
+              │  (Async emails, moderation,│
+              │   reputation, security)    │
+              └────────────────────────────┘
 ```
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+| Technology | Version | Purpose |
+|---|---|---|
+| **React** | 19.2 | UI framework |
+| **TypeScript** | 5.9 | Type safety |
+| **Vite** | 7.2 | Build tool & dev server |
+| **Tailwind CSS** | 4.1 | Utility-first styling |
+| **Zustand** | 5.0 | State management |
+| **React Router** | 7.9 | Client-side routing |
+| **Framer Motion** | 12.x | Animations & page transitions |
+| **Axios** | 1.13 | HTTP client |
+| **Lucide React** | 0.555 | Icons |
+| **emoji-picker-react** | 4.16 | Emoji picker for chat |
+
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| **Django** | 5.2.8 | Web framework |
+| **Django REST Framework** | 3.16 | REST API |
+| **Django Channels** | 4.3 | WebSocket (ASGI) |
+| **channels-redis** | 4.3 | Redis channel layer |
+| **Daphne** | 4.2 | ASGI server |
+| **PostgreSQL** | 15+ | Primary database + full-text search |
+| **Redis** | 7+ | Cache, Celery broker, channel layer |
+| **Celery** | 5.6 | Async task queue |
+| **djangorestframework-simplejwt** | 5.5 | JWT auth + token blacklist |
+| **argon2-cffi** | 25.1 | Password hashing |
+| **Pillow** | 12.0 | Image processing (avatars) |
+| **python-magic** | 0.4.27 | File type validation |
+| **openai** | 1.58 | AI content moderation |
+| **better-profanity** | 0.7 | Local profanity filter |
+| **vaderSentiment** | 3.3 | Sentiment analysis |
+| **Gunicorn** | — | WSGI server (production) |
+
+### Infrastructure
+| Technology | Purpose |
+|---|---|
+| **Docker** | Containerization |
+| **Docker Compose** | Multi-service orchestration |
+| **Nginx** | Reverse proxy + SSL |
+| **GitHub** | Source control |
+
+---
 
 ## 📦 Prerequisites
 
 - **Node.js** 18+ and npm
 - **Python** 3.11+
-- **Docker** and Docker Compose
+- **Docker** and Docker Compose (for PostgreSQL and Redis)
 - **Git**
-- **PostgreSQL** 15+ (via Docker)
-- **Redis** 7+ (via Docker)
+
+---
 
 ## 🚀 Quick Start
 
@@ -91,139 +191,117 @@ An anonymous chatting and matchmaking platform exclusively for IIT Indore studen
 git clone <repository-url>
 cd Ano
 
-# Start database services
+# Start PostgreSQL and Redis via Docker
 docker-compose up -d
 
-# Backend setup
+# --- Backend ---
 cd backend
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements-dev.txt
-cp .env.example .env
+cp .env.example .env            # Edit .env with your settings
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 
-# Frontend setup (in new terminal)
+# --- Frontend (new terminal) ---
 cd frontend
 npm install
-cp .env.example .env
+cp .env.example .env            # Edit .env with your API URL
 npm run dev
+
+# --- Celery worker (new terminal, for async emails & tasks) ---
+cd backend
+source venv/bin/activate
+celery -A ano_backend worker -l info
 ```
 
-Access the application:
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **Admin Panel**: http://localhost:8000/admin
+Access the app:
+| Service | URL |
+|---|---|
+| **Frontend** | http://localhost:5173 |
+| **Backend API** | http://localhost:8000 |
+| **Django Admin** | http://localhost:8000/admin |
+| **Health Check** | http://localhost:8000/api/health/ |
+| **System Monitoring** | http://localhost:8000/api/monitoring/ |
+
+---
 
 ## 💻 Development Setup
 
-### Backend Setup (Detailed)
+### Backend (Detailed)
 
 ```bash
 cd backend
 
-# Create and activate virtual environment
+# Virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
-# Install dependencies
+# Install all dependencies (including dev tools: pytest, black, flake8)
 pip install -r requirements-dev.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your settings (see Environment Variables section)
+# Edit .env — minimum required: SECRET_KEY, DB_*, REDIS_*
 
-# Run database migrations
+# Database setup
 python manage.py migrate
-
-# Create superuser for admin access
 python manage.py createsuperuser
+
+# Load legal documents (terms, privacy policy)
+python manage.py shell < load_legal_docs.py
 
 # Start development server
 python manage.py runserver
 ```
 
-**Backend Development Commands:**
+**Useful backend commands:**
 ```bash
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=. --cov-report=html
-
-# Format code
-black .
-
-# Lint code
-flake8
-
-# Create new migrations
-python manage.py makemigrations
-
-# Apply migrations
-python manage.py migrate
-
-# Create Django app
-python manage.py startapp app_name
-
-# Run Celery worker (for async tasks)
-celery -A ano_backend worker -l info
-
-# Run Django shell
-python manage.py shell
+pytest                               # Run all tests
+pytest --cov=. --cov-report=html    # Coverage report
+pytest -v authentication/tests.py   # Test specific app
+black .                             # Format code
+flake8                              # Lint code
+python manage.py makemigrations     # Create migrations
+python manage.py migrate            # Apply migrations
+celery -A ano_backend worker -l info            # Start Celery worker
+celery -A ano_backend beat -l info              # Start Celery beat (scheduled tasks)
+python manage.py cleanup_test_data  # Remove test/seed data
 ```
 
-### Frontend Setup (Detailed)
+### Frontend (Detailed)
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
 
-# Configure environment
 cp .env.example .env
-# Edit .env with your settings
+# Set VITE_API_BASE_URL and VITE_WS_BASE_URL
 
-# Start development server
-npm run dev
+npm run dev             # Start dev server (http://localhost:5173)
+npm run build           # Production build (tsc + vite)
+npm run build:prod      # Vite build only (skips tsc)
+npm run preview         # Preview production build
+npm run lint            # Run ESLint
+npm run lint:fix        # Auto-fix lint errors
+npm run format          # Format with Prettier
+npm run format:check    # Check formatting
 ```
 
-**Frontend Development Commands:**
-```bash
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
-# Type check
-npm run type-check
-```
+---
 
 ## 🔧 Environment Variables
 
-### Backend Environment Variables
-
-Create `backend/.env` from `backend/.env.example`:
+### Backend (`backend/.env`)
 
 ```bash
-# Django Settings
+# Django Core
 SECRET_KEY=your-secret-key-here-change-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database
+# Database (PostgreSQL)
 DB_NAME=ano_db
 DB_USER=ano_user
 DB_PASSWORD=ano_password
@@ -234,11 +312,11 @@ DB_PORT=5432
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# JWT Settings (in minutes)
+# JWT (in minutes)
 JWT_ACCESS_TOKEN_LIFETIME=15
-JWT_REFRESH_TOKEN_LIFETIME=10080
+JWT_REFRESH_TOKEN_LIFETIME=10080   # 7 days
 
-# Email Settings
+# Email
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
@@ -246,32 +324,37 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your-email@example.com
 EMAIL_HOST_PASSWORD=your-app-password
 
-# CORS Settings
+# CORS
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 # Celery
 CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
 
-# Frontend URL
+# Frontend URL (used in email links)
 FRONTEND_URL=http://localhost:5173
 
-# Security
-CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+# AI Moderation (optional — falls back to local if not set)
+OPENAI_API_KEY=sk-...
+
+# Moderation settings
+MODERATION_ENABLED=True
+MODERATION_TOXICITY_THRESHOLD=0.85
+MODERATION_BLOCK_VIOLENCE=True
+MODERATION_BLOCK_SELF_HARM=True
+MODERATION_BLOCK_HARASSMENT=False
 ```
 
-### Frontend Environment Variables
-
-Create `frontend/.env` from `frontend/.env.example`:
+### Frontend (`frontend/.env`)
 
 ```bash
-# API Configuration
 VITE_API_BASE_URL=http://localhost:8000
 VITE_WS_BASE_URL=ws://localhost:8000/ws
-
-# Environment
 VITE_ENV=development
 ```
+
+---
 
 ## 🧪 Running Tests
 
@@ -279,105 +362,293 @@ VITE_ENV=development
 
 ```bash
 cd backend
+source venv/bin/activate
 
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-
-# Run specific test file
-pytest authentication/tests.py
-
-# Run specific test
-pytest authentication/tests.py::TestUserRegistration::test_valid_registration
-
-# Run with verbose output
-pytest -v
-
-# Run and stop on first failure
-pytest -x
+pytest                                              # All tests
+pytest -v                                           # Verbose
+pytest -x                                           # Stop on first failure
+pytest --cov=. --cov-report=html                   # With coverage
+pytest authentication/tests.py                      # Specific app
+pytest test_spam_detection.py                       # Spam detection tests
+pytest test_moderation.py                           # Moderation tests
+pytest test_password_reset.py                       # Password reset tests
+pytest chat/test_websocket.py                       # WebSocket tests
+pytest matchmaking/test_websocket.py               # Matchmaking WS tests
 ```
 
-### Frontend Tests
+Test files present:
+- `authentication/tests.py` — registration, login, email verification, password reset
+- `chat/tests.py` and `chat/test_websocket.py` — chatrooms, messages, WebSocket
+- `matchmaking/tests.py` and `matchmaking/test_websocket.py` — swipes, matches, notifications
+- `reports/tests.py` — reporting, blocking
+- `reputation/tests.py` — Wilson Score, reputation points, tiers
+- `security/tests.py` — rate limiting, authentication security
+- `test_spam_detection.py` — anti-spam detection
+- `test_moderation.py` — AI moderation pipeline
+- `test_password_reset.py` — password reset flow (with `test_settings.py` for email overrides)
 
-```bash
-cd frontend
+---
 
-# Run tests (when implemented)
-npm test
+## 📚 API Reference
 
-# Run tests in watch mode
-npm test -- --watch
+Full documentation: [`docs/API.md`](docs/API.md)
 
-# Run tests with coverage
-npm test -- --coverage
-```
+### Authentication (`/api/auth/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/register/` | Register with `@iiti.ac.in` email |
+| POST | `/verify-email/` | Verify email with token |
+| POST | `/login/` | Login → JWT tokens + HTTP-only cookie |
+| POST | `/logout/` | Blacklist refresh token + clear cookie |
+| POST | `/refresh/` | Rotate access & refresh tokens |
+| GET | `/me/` | Get current user info |
+| POST | `/password-reset/` | Request password reset email |
+| POST | `/password-reset-confirm/` | Confirm reset with token + new password |
 
-## 📚 API Documentation
+### Profiles (`/api/profiles/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/` | Create anonymous profile |
+| GET | `/me/` | Get own profile |
+| PUT | `/me/` | Update own profile |
+| GET | `/{uuid}/` | Get profile by anonymous UUID |
 
-See [docs/API.md](docs/API.md) for complete API documentation.
+### Chat (`/api/chat/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/chatrooms/` | List all active chatrooms |
+| GET | `/chatrooms/{uuid}/messages/` | Paginated message history |
+| POST | `/chatrooms/{uuid}/messages/` | Post a message |
+| PATCH | `/messages/{uuid}/` | Edit own message |
+| DELETE | `/messages/{uuid}/` | Delete own message |
+| POST | `/messages/{uuid}/pin/` | Pin message (admin) |
+| GET | `/chatrooms/{uuid}/search/` | Full-text search messages |
+| POST | `/chatrooms/{uuid}/polls/` | Create poll (Campus Legend) |
+| POST | `/polls/{uuid}/vote/` | Vote on poll |
 
-### Quick API Reference
+### Matchmaking (`/api/matchmaking/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/profiles/` | Get profiles to swipe |
+| POST | `/swipe/` | Record swipe (`like`/`pass`) |
+| GET | `/matches/` | List matched users |
+| GET | `/matches/{id}/messages/` | Match chat history |
 
-**Authentication:**
-- `POST /api/auth/register/` - Register new user
-- `POST /api/auth/login/` - Login and get tokens
-- `POST /api/auth/refresh/` - Refresh access token
-- `POST /api/auth/logout/` - Logout
+### Reports & Safety (`/api/reports/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/` | Report a user |
+| POST | `/block/` | Block a user |
+| GET | `/blocked/` | List blocked users |
+| DELETE | `/block/{uuid}/` | Unblock a user |
 
-**Profiles:**
-- `POST /api/profiles/` - Create profile
-- `GET /api/profiles/me/` - Get own profile
-- `PUT /api/profiles/me/` - Update profile
-- `GET /api/profiles/{uuid}/` - Get profile by UUID
+### Reputation (`/api/reputation/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/me/` | Own reputation score, tier, level |
+| GET | `/leaderboard/` | Top users by reputation |
+| POST | `/messages/{uuid}/vote/` | Upvote/downvote a message |
+| GET | `/heat/` | Own heat level info |
 
-**Chat:**
-- `GET /api/chatrooms/` - List chatrooms
-- `GET /api/chatrooms/{uuid}/messages/` - Get messages
-- `POST /api/chatrooms/{uuid}/messages/` - Send message
+### Moderation (`/api/moderation/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/status/` | Own moderation status & shadowban info |
+| POST | `/rehabilitate/` | Attempt heat level reduction |
+| GET | `/admin/queue/` | Moderation queue (admin) |
+| POST | `/admin/{id}/action/` | Take moderation action (admin) |
 
-**Matchmaking:**
-- `GET /api/matchmaking/profiles/` - Get profiles to swipe
-- `POST /api/matchmaking/swipe/` - Record swipe
-- `GET /api/matchmaking/matches/` - Get matches
+### Admin (`/api/admin/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/metrics/` | Platform-wide metrics |
+| GET | `/reports/` | All user reports |
+| POST | `/reports/{id}/resolve/` | Resolve a report |
+| POST | `/users/{uuid}/moderate/` | Mute/ban/warn a user |
+| POST | `/broadcast/` | Broadcast message to chatroom |
 
-**Reports:**
-- `POST /api/reports/` - Create report
-- `POST /api/reports/block/` - Block user
+### Health & Monitoring (`/api/`)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health/` | Quick DB health check |
+| GET | `/monitoring/health/` | Full system health (Celery, Redis, DB) |
+| GET | `/monitoring/metrics/` | Task performance metrics |
+
+---
 
 ## 🔌 WebSocket Events
 
-See [docs/WEBSOCKETS.md](docs/WEBSOCKETS.md) for complete WebSocket documentation.
+Full documentation: [`docs/WEBSOCKETS.md`](docs/WEBSOCKETS.md)
 
-### Chat WebSocket (`/ws/chat/{chatroom_uuid}/`)
+### Chatroom WebSocket — `ws://localhost:8000/ws/chat/{chatroom_uuid}/`
 
 **Client → Server:**
-- `message.send` - Send message
-- `message.edit` - Edit message
-- `message.delete` - Delete message
-- `message.react` - React to message
-- `typing.start` - Start typing
-- `typing.stop` - Stop typing
+| Event | Description |
+|---|---|
+| `message.send` | Send a text/image message |
+| `message.edit` | Edit own message |
+| `message.delete` | Delete own message |
+| `message.react` | Add/remove emoji reaction |
+| `message.upvote` | Upvote a message |
+| `message.downvote` | Downvote a message |
+| `typing.start` | Start typing indicator |
+| `typing.stop` | Stop typing indicator |
 
 **Server → Client:**
-- `message.receive` - New message
-- `message.updated` - Message edited
-- `message.deleted` - Message deleted
-- `message.reaction` - New reaction
-- `typing.indicator` - User typing
-- `user.joined` - User joined
-- `user.left` - User left
+| Event | Description |
+|---|---|
+| `message.receive` | New message (or shadowbanned ghost delivery) |
+| `message.updated` | Message edited |
+| `message.deleted` | Message deleted |
+| `message.reaction` | Reaction added/removed |
+| `message.vote_update` | Updated Wilson Score |
+| `typing.indicator` | Someone is typing |
+| `user.joined` | User joined chatroom |
+| `user.left` | User left chatroom |
+| `moderation.notification` | Shadowban/rejection notice |
+
+### Match WebSocket — `ws://localhost:8000/ws/matchmaking/matches/{match_id}/`
+
+**Client → Server:** `message.send`, `typing.start`, `typing.stop`
+
+**Server → Client:** `message.receive`, `typing.indicator`, `user.online`, `user.offline`
+
+### Reputation WebSocket — `ws://localhost:8000/ws/reputation/`
+
+**Server → Client:** `reputation.update`, `tier.promoted`, `vote.received`, `moderation.notification`
+
+---
+
+## 📁 Project Structure
+
+```
+Ano/
+├── backend/                         # Django backend (Python 3.11+)
+│   ├── ano_backend/                 # Main Django project config
+│   │   ├── settings.py              # All settings (env-driven)
+│   │   ├── urls.py                  # Root URL routing
+│   │   ├── asgi.py                  # ASGI entry point (Channels)
+│   │   ├── wsgi.py                  # WSGI entry point (Gunicorn)
+│   │   ├── celery.py                # Celery app configuration
+│   │   ├── celery_config.py         # Celery task beat schedule
+│   │   ├── middleware.py            # HTTPS redirect, security headers, anonymous logging
+│   │   ├── monitoring.py            # PerformanceMonitor, CircuitBreaker, HealthChecker
+│   │   ├── monitoring_tasks.py      # Scheduled monitoring Celery tasks
+│   │   ├── logging_config.py        # Privacy-safe logging (no PII)
+│   │   ├── validators.py            # Shared input validators
+│   │   ├── file_validators.py       # MIME type + size file validators
+│   │   ├── file_utils.py            # Media file utilities
+│   │   └── health_urls.py           # /api/monitoring/ endpoints
+│   ├── authentication/              # User auth app
+│   │   ├── models.py                # Custom User (UUID PK, @iiti.ac.in validation)
+│   │   ├── views.py                 # Register, login, logout, refresh, me, password reset
+│   │   ├── serializers.py           # Request/response serializers
+│   │   ├── tasks.py                 # Celery: send_verification_email, send_password_reset_email
+│   │   ├── models_legal.py          # Terms/privacy acceptance models
+│   │   └── views_legal.py           # Legal document endpoints
+│   ├── profiles/                    # Anonymous profile app
+│   │   └── models.py                # Profile (anonymous_id UUID, age, interests, hobbies, etc.)
+│   ├── chat/                        # Chat & messaging app
+│   │   ├── models.py                # Chatroom, Message, MessageReaction, ReadReceipt, Poll, Confession
+│   │   ├── consumers.py             # ChatConsumer WebSocket handler (27KB)
+│   │   ├── anti_spam.py             # AntiSpamSystem + SpamDetectionMiddleware
+│   │   ├── routing.py               # WebSocket URL routing
+│   │   └── views.py                 # REST endpoints for chatrooms/messages
+│   ├── matchmaking/                 # Matchmaking app
+│   │   ├── models.py                # Swipe, Match models
+│   │   ├── consumers.py             # MatchConsumer WebSocket handler
+│   │   ├── routing.py               # WebSocket URL routing
+│   │   └── views.py                 # Swipe, match, profile discovery endpoints
+│   ├── reports/                     # Reports & blocking app
+│   │   └── models.py                # Report, Block models
+│   ├── reputation/                  # Gamification app
+│   │   ├── models.py                # UserReputation, MessageRanking (Wilson Score), Vote
+│   │   ├── services.py              # ReputationService (points, tiers, leaderboard)
+│   │   ├── tasks.py                 # Celery: tier updates, Wilson Score recalc, batch operations
+│   │   ├── websocket_utils.py       # RealtimeNotifier for reputation WebSocket events
+│   │   └── signals.py               # Auto-create UserReputation on user create
+│   ├── moderation/                  # AI moderation app
+│   │   ├── models.py                # ModerationResult, ViolationHistory, Shadowban
+│   │   ├── services.py              # HeatSystem, OpenAIModerator, LocalModerator, ModerationService
+│   │   ├── tasks.py                 # Celery: async moderation, heat score updates
+│   │   └── middleware.py            # Request-level moderation middleware
+│   ├── security/                    # Security app
+│   │   ├── models.py                # SecurityEvent, RateLimit, IdentityHash
+│   │   ├── authentication.py        # EnhancedAuthenticationService
+│   │   ├── middleware.py            # Rate limiting middleware (12KB)
+│   │   ├── tasks.py                 # Celery: security event analysis, email anonymization
+│   │   └── services.py              # Identity hashing, threat analysis
+│   ├── admin_dashboard/             # Admin tools app
+│   │   └── views.py                 # Platform metrics, user moderation, broadcast
+│   ├── manage.py
+│   ├── requirements.txt             # Production dependencies
+│   ├── requirements-dev.txt         # + pytest, black, flake8, hypothesis
+│   └── Dockerfile
+├── frontend/                        # React frontend (Node 18+)
+│   ├── src/
+│   │   ├── App.tsx                  # Router, route guards (ProtectedRoute, AdminRoute, PublicRoute)
+│   │   ├── components/
+│   │   │   ├── auth/                # LandingPage, LoginForm, SignupForm, EmailVerification,
+│   │   │   │                        #   PasswordResetRequest, PasswordResetConfirm
+│   │   │   ├── profile/             # ProfileCreation, ProfileEditor
+│   │   │   ├── chat/                # ChatPage, ChatWindow, ChatroomList, MessageBubble,
+│   │   │   │                        #   MessageInput, MessageReactions, SearchModal, SearchResults
+│   │   │   ├── matchmaking/         # (code exists, routes disabled)
+│   │   │   ├── safety/              # SafetySettings (report/block UI)
+│   │   │   ├── admin/               # AdminDashboard, PlatformMetrics, ReportsList,
+│   │   │   │                        #   ReportDetail, UserModerationPanel, BroadcastMessageForm
+│   │   │   ├── reputation/          # ReputationComponents, ReputationDemo
+│   │   │   ├── common/              # Navigation, ToastContainer, PageTransition
+│   │   │   └── ui/                  # Shared UI primitives
+│   │   ├── api/                     # Axios API clients (auth, chat, matchmaking, profile, reports, admin)
+│   │   ├── stores/                  # Zustand stores (authStore, chatStore, matchmakingStore, profileStore)
+│   │   ├── services/                # websocket.ts — WebSocket client service
+│   │   ├── hooks/                   # useToast and other custom hooks
+│   │   ├── contexts/                # React contexts
+│   │   ├── styles/                  # Global CSS
+│   │   ├── App.css                  # App-level styles
+│   │   ├── index.css                # Tailwind base + global tokens
+│   │   └── main.tsx                 # Entry point
+│   ├── index.html
+│   ├── package.json                 # Node dependencies
+│   ├── vite.config.ts               # Vite config
+│   ├── tailwind.config.js           # Tailwind v4 config
+│   ├── tsconfig.app.json
+│   ├── eslint.config.js
+│   ├── nginx.conf                   # Nginx config (HTTP)
+│   ├── nginx-ssl.conf               # Nginx config (HTTPS)
+│   └── Dockerfile / Dockerfile.prod
+├── docs/
+│   ├── API.md                       # Complete REST API reference
+│   ├── WEBSOCKETS.md                # WebSocket events & payloads
+│   ├── DEVELOPER_GUIDE.md           # Developer onboarding
+│   ├── ENVIRONMENT.md               # All environment variables reference
+│   └── README.md                    # Docs index
+├── docker-compose.yml               # Dev services (PostgreSQL 15 + Redis 7)
+├── docker-compose.prod.yml          # Full production stack
+├── deploy.sh                        # Production deployment script
+├── start-dev.sh                     # Local development start script
+├── monitor.sh                       # Production monitoring script
+├── test_e2e.sh                      # End-to-end test script
+├── init-db.sql                      # Initial database setup SQL
+├── COMMUNITY_GUIDELINES.md
+├── PRIVACY_POLICY.md
+├── TERMS_OF_SERVICE.md
+├── LICENSE                          # MIT License
+└── README.md                        # This file
+```
+
+---
 
 ## 🚢 Deployment
 
-See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete deployment instructions.
+See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for full production instructions.
 
 ### Quick Production Deployment
 
 ```bash
 # Build and start all services
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml up -d --build
 
 # Run migrations
 docker-compose -f docker-compose.prod.yml exec backend python manage.py migrate
@@ -387,135 +658,65 @@ docker-compose -f docker-compose.prod.yml exec backend python manage.py createsu
 
 # Collect static files
 docker-compose -f docker-compose.prod.yml exec backend python manage.py collectstatic --noinput
+
+# Monitor services
+./monitor.sh
 ```
 
-## 📁 Project Structure
+---
 
-```
-Ano/
-├── backend/                    # Django backend
-│   ├── ano_backend/           # Main Django project
-│   │   ├── settings.py        # Django settings
-│   │   ├── urls.py            # URL routing
-│   │   ├── middleware.py      # Custom middleware
-│   │   └── logging_config.py  # Logging configuration
-│   ├── authentication/        # Auth app
-│   ├── profiles/              # Profile management
-│   ├── chat/                  # Chat and messaging
-│   ├── matchmaking/           # Swipe and match
-│   ├── reports/               # Reports and blocking
-│   ├── admin_dashboard/       # Admin tools
-│   ├── manage.py              # Django management
-│   ├── requirements.txt       # Python dependencies
-│   └── Dockerfile             # Backend Docker image
-├── frontend/                  # React frontend
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   │   ├── auth/          # Authentication UI
-│   │   │   ├── profile/       # Profile UI
-│   │   │   ├── chat/          # Chat UI
-│   │   │   ├── matchmaking/   # Matchmaking UI
-│   │   │   ├── safety/        # Safety features UI
-│   │   │   ├── admin/         # Admin dashboard UI
-│   │   │   └── common/        # Shared components
-│   │   ├── api/               # API client functions
-│   │   ├── stores/            # Zustand state stores
-│   │   ├── services/          # WebSocket services
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── contexts/          # React contexts
-│   │   ├── styles/            # Global styles
-│   │   ├── App.tsx            # Main app component
-│   │   └── main.tsx           # Entry point
-│   ├── package.json           # Node dependencies
-│   ├── vite.config.ts         # Vite configuration
-│   ├── tailwind.config.js     # Tailwind configuration
-│   └── Dockerfile             # Frontend Docker image
-├── docs/                      # Documentation
-│   ├── API.md                 # API documentation
-│   ├── WEBSOCKETS.md          # WebSocket documentation
-│   └── DEVELOPER_GUIDE.md     # Developer onboarding
-├── docker-compose.yml         # Development services
-├── docker-compose.prod.yml    # Production services
-├── .env.example               # Environment template
-└── README.md                  # This file
-```
+## 📖 Documentation
+
+| Document | Description |
+|---|---|
+| [`docs/API.md`](docs/API.md) | Complete REST API reference with request/response examples |
+| [`docs/WEBSOCKETS.md`](docs/WEBSOCKETS.md) | WebSocket events, payloads, and connection management |
+| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Developer onboarding and architecture decisions |
+| [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) | All environment variables with descriptions and defaults |
+| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) | Production deployment on VPS / cloud |
+| [`COMMUNITY_GUIDELINES.md`](COMMUNITY_GUIDELINES.md) | Community rules and moderation policy |
+| [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | Privacy policy |
+| [`TERMS_OF_SERVICE.md`](TERMS_OF_SERVICE.md) | Terms of service |
+
+---
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Commit your changes using conventional commits (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ### Code Style
 
-- **Backend**: Follow PEP 8, use Black for formatting, Flake8 for linting
-- **Frontend**: Follow ESLint rules, use Prettier for formatting
-- **Commits**: Use conventional commit messages
+- **Backend**: PEP 8 — use `black .` for formatting, `flake8` for linting
+- **Frontend**: ESLint + Prettier (`npm run format` and `npm run lint:fix`)
+- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) format
 
-## 📖 Documentation
+---
 
-- [API Documentation](docs/API.md) - Complete REST API reference
-- [WebSocket Documentation](docs/WEBSOCKETS.md) - WebSocket events and payloads
-- [Developer Guide](docs/DEVELOPER_GUIDE.md) - Developer onboarding guide
-- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Production deployment instructions
-- [Environment Variables](docs/ENVIRONMENT.md) - Complete environment variable reference
+## 🔒 Security Notes
 
-## 🛠️ Tech Stack
+- All user identifiers exposed in any API response are UUIDs (never email addresses or real names)
+- Logs use anonymous IDs only — no PII is ever written to log files
+- JWT refresh tokens are stored in HTTP-only cookies (not accessible to JavaScript)
+- Rate limiting is enforced at the middleware layer on all endpoints
+- File uploads are validated for MIME type (not just extension) using `python-magic`
+- Report security vulnerabilities by opening a private GitHub issue
 
-### Frontend
-- **React 18** with TypeScript
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Zustand** - State management
-- **Socket.IO** - WebSocket client
-- **Axios** - HTTP client
-- **Framer Motion** - Animations
-- **React Router v6** - Routing
-
-### Backend
-- **Django 5.2** - Web framework
-- **Django REST Framework** - API framework
-- **Django Channels** - WebSocket support
-- **PostgreSQL 15+** - Database
-- **Redis 7+** - Cache and message broker
-- **Celery** - Async task queue
-- **djangorestframework-simplejwt** - JWT authentication
-- **Argon2** - Password hashing
-
-### Infrastructure
-- **Docker** - Containerization
-- **Nginx** - Reverse proxy
-- **Gunicorn** - WSGI server
-- **Daphne** - ASGI server
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🆘 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check existing documentation in `docs/`
-- Review the [Developer Guide](docs/DEVELOPER_GUIDE.md)
-
-## 🔒 Security
-
-- All user identifiers are UUID-based for anonymity
-- No personal information exposed in any API response
-- JWT tokens with secure HTTP-only cookies
-- Rate limiting on all endpoints
-- Input validation and sanitization
-- HTTPS enforcement in production
-- Regular security audits recommended
+---
 
 ## 🎯 Roadmap
 
+- [ ] Re-enable matchmaking with improved algorithm
+- [ ] Voice messages in chat
 - [ ] Mobile app (React Native)
-- [ ] Voice/video chat
-- [ ] AI-powered content moderation
-- [ ] Advanced matching algorithms
-- [ ] Analytics dashboard
+- [ ] Advanced matching algorithms (interest-based, behavior-based)
 - [ ] Multi-language support
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
