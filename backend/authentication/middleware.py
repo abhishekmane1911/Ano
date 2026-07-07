@@ -14,7 +14,7 @@ class RateLimitMiddleware:
         self.get_response = get_response
         # Configuration
         self.max_attempts = 5  # Maximum failed attempts
-        self.lockout_duration = 300  # Lockout duration in seconds (5 minutes)
+        self.lockout_duration = 300  # Lockout duration  (5 minutes)
         self.attempt_window = 300  # Time window for counting attempts (5 minutes)
     
     def __call__(self, request):

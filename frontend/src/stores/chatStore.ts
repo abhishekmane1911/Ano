@@ -14,6 +14,16 @@ export interface Message {
   updated_at: string;
   reactions?: MessageReaction[];
   reaction_count?: Record<string, number>;
+  upvotes?: number;
+  downvotes?: number;
+  wilson_score?: number;
+  user_vote?: 'upvote' | 'downvote' | null;
+  ranking?: {
+    upvotes: number;
+    downvotes: number;
+    wilson_score: number;
+    user_vote: 'upvote' | 'downvote' | null;
+  };
 }
 
 export interface MessageReaction {
@@ -46,8 +56,8 @@ interface ChatState {
   onlineUsers: Record<string, string[]>;
   ws: WebSocket | null;
   isConnected: boolean;
-  
-  // Actions
+  blockedUsers: string[];
+
   setChatrooms: (chatrooms: Chatroom[]) => void;
   setCurrentChatroom: (chatroom: Chatroom | null) => void;
   addMessage: (chatroomId: string, message: Message) => void;
@@ -57,6 +67,7 @@ interface ChatState {
   prependMessages: (chatroomId: string, messages: Message[]) => void;
   addReaction: (chatroomId: string, messageId: string, emoji: string, profileId: string, reactionId: string) => void;
   removeReaction: (chatroomId: string, messageId: string, emoji: string, profileId: string) => void;
+  updateVote: (chatroomId: string, messageId: string, upvotes: number, downvotes: number, userVote: 'upvote' | 'downvote' | null) => void;
   addTypingUser: (chatroomId: string, profileId: string) => void;
   removeTypingUser: (chatroomId: string, profileId: string) => void;
   addOnlineUser: (chatroomId: string, profileId: string) => void;
@@ -65,6 +76,8 @@ interface ChatState {
   setConnected: (connected: boolean) => void;
   incrementUnreadCount: (chatroomId: string) => void;
   resetUnreadCount: (chatroomId: string) => void;
+  setBlockedUsers: (userIds: string[]) => void;
+  addBlockedUser: (userId: string) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -75,6 +88,7 @@ export const useChatStore = create<ChatState>((set) => ({
   onlineUsers: {},
   ws: null,
   isConnected: false,
+  blockedUsers: [],
 
   setChatrooms: (chatrooms) => set({ chatrooms }),
   
@@ -82,6 +96,10 @@ export const useChatStore = create<ChatState>((set) => ({
   
   addMessage: (chatroomId, message) =>
     set((state) => {
+      // Ignore messages from blocked users
+      if (state.blockedUsers.includes(message.sender_id)) {
+        return state;
+      }
       const existingMessages = state.messages[chatroomId] || [];
       // Prevent duplicates by checking if message ID already exists
       const isDuplicate = existingMessages.some((m) => m.id === message.id);
@@ -111,9 +129,7 @@ export const useChatStore = create<ChatState>((set) => ({
       messages: {
         ...state.messages,
         [chatroomId]: (state.messages[chatroomId] || []).map((m) =>
-          m.id === messageId
-            ? { ...m, is_deleted: true, content: '[Message deleted]', media_url: '' }
-            : m
+          m.id === messageId ? { ...m, is_deleted: true, content: '[Message deleted]' } : m
         ),
       },
     })),
@@ -122,17 +138,29 @@ export const useChatStore = create<ChatState>((set) => ({
     set((state) => ({
       messages: {
         ...state.messages,
-        [chatroomId]: messages,
+        [chatroomId]: messages.filter(m => !state.blockedUsers.includes(m.sender_id)),
       },
     })),
   
-  prependMessages: (chatroomId, messages) =>
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [chatroomId]: [...messages, ...(state.messages[chatroomId] || [])],
-      },
-    })),
+  prependMessages: (chatroomId, newMessages) =>
+    set((state) => {
+      const existingMessages = state.messages[chatroomId] || [];
+      
+      // Filter out messages from blocked users
+      const allowedNewMessages = newMessages.filter(m => !state.blockedUsers.includes(m.sender_id));
+      
+      // Filter out duplicates
+      const uniqueNewMessages = allowedNewMessages.filter(
+        (newMsg) => !existingMessages.some((existingMsg) => existingMsg.id === newMsg.id)
+      );
+      
+      return {
+        messages: {
+          ...state.messages,
+          [chatroomId]: [...uniqueNewMessages, ...existingMessages],
+        },
+      };
+    }),
   
   addReaction: (chatroomId, messageId, emoji, profileId, reactionId) =>
     set((state) => ({
@@ -156,6 +184,16 @@ export const useChatStore = create<ChatState>((set) => ({
       },
     })),
   
+  updateVote: (chatroomId, messageId, upvotes, downvotes, userVote) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [chatroomId]: (state.messages[chatroomId] || []).map((m) =>
+          m.id === messageId ? { ...m, upvotes, downvotes, user_vote: userVote } : m
+        ),
+      },
+    })),
+
   removeReaction: (chatroomId, messageId, emoji, profileId) =>
     set((state) => ({
       messages: {
@@ -246,8 +284,22 @@ export const useChatStore = create<ChatState>((set) => ({
   
   resetUnreadCount: (chatroomId) =>
     set((state) => ({
-      chatrooms: state.chatrooms.map((room) =>
-        room.id === chatroomId ? { ...room, unread_count: 0 } : room
-      ),
+      chatrooms: state.chatrooms.map(c => 
+        c.id === chatroomId ? { ...c, unread_count: 0 } : c
+      )
+    })),
+    
+  setBlockedUsers: (userIds) => set({ blockedUsers: userIds }),
+  
+  addBlockedUser: (userId) => 
+    set((state) => ({
+      blockedUsers: [...state.blockedUsers, userId],
+      // Remove any existing messages from this newly blocked user
+      messages: Object.fromEntries(
+        Object.entries(state.messages).map(([roomId, msgs]) => [
+          roomId, 
+          msgs.filter(m => m.sender_id !== userId)
+        ])
+      )
     })),
 }));

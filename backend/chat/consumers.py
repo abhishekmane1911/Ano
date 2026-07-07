@@ -9,6 +9,7 @@ from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from .models import Chatroom, Message, MessageReaction, ReadReceipt
 from profiles.models import Profile
+from .anti_spam import SpamDetectionMiddleware
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -88,12 +89,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             event_type = data.get('type')
             
-            # Check rate limiting only for message sends (not for typing, ping, etc.)
-            if event_type == 'message.send':
-                if not await self.check_rate_limit():
+            # Apply comprehensive spam detection
+            if event_type in ['message.send', 'typing.start']:
+                content = data.get('content', '') if event_type == 'message.send' else ''
+                
+                # Run spam checks
+                is_allowed, error_message = await SpamDetectionMiddleware.check_all(
+                    user_id=self.user.id,
+                    chatroom_id=self.chatroom_id,
+                    content=content,
+                    event_type=event_type
+                )
+                
+                if not is_allowed:
                     await self.send(text_data=json.dumps({
                         'type': 'error',
-                        'message': 'Rate limit exceeded. Please slow down.'
+                        'message': error_message,
+                        'spam_detected': True
                     }))
                     return
             
@@ -112,6 +124,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.handle_typing_stop(data)
             elif event_type == 'read.receipt':
                 await self.handle_read_receipt(data)
+            elif event_type == 'vote.cast':
+                await self.handle_vote_cast(data)
             elif event_type == 'ping':
                 # Handle ping/pong for connection keep-alive
                 await self.send(text_data=json.dumps({
@@ -173,7 +187,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }))
                 return
         
-        # Create message in database
+        # Create message in database (with moderation)
         message = await self.create_message(
             content=content,
             message_type=message_type,
@@ -189,6 +203,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': await self.serialize_message(message)
                 }
             )
+        else:
+            # Message was rejected by moderation
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Your message was rejected due to community guidelines violation. Please be respectful.'
+            }))
+
     
     async def handle_message_edit(self, data):
         """Handle editing an existing message"""
@@ -323,6 +344,77 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
     
+    async def handle_vote_cast(self, data):
+        """Handle vote casting on a message"""
+        message_id = data.get('message_id')
+        vote_type = data.get('vote_type')
+        
+        if not message_id or not vote_type:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Message ID and vote type are required'
+            }))
+            return
+        
+        # Cast vote and get result
+        vote_result = await self.cast_vote(message_id, vote_type)
+        
+        if vote_result and vote_result['success']:
+            # Broadcast ranking update to all users in chatroom
+            await self.channel_layer.group_send(
+                self.chatroom_group_name,
+                {
+                    'type': 'ranking_update',
+                    'message_id': message_id,
+                    'ranking_data': vote_result.get('ranking_data', {}),
+                    'timestamp': time.time()
+                }
+            )
+            
+            # If there was a reputation update, broadcast it
+            if 'reputation_update' in vote_result:
+                reputation_data = vote_result['reputation_update']
+                await self.channel_layer.group_send(
+                    self.chatroom_group_name,
+                    {
+                        'type': 'reputation_update',
+                        'user_id': reputation_data.get('user_id'),
+                        'reputation_data': reputation_data,
+                        'timestamp': time.time()
+                    }
+                )
+            
+            # If there was a tier update, broadcast it
+            if 'tier_update' in vote_result:
+                tier_data = vote_result['tier_update']
+                await self.channel_layer.group_send(
+                    self.chatroom_group_name,
+                    {
+                        'type': 'tier_update',
+                        'user_id': tier_data.get('user_id'),
+                        'old_tier': tier_data.get('old_tier'),
+                        'new_tier': tier_data.get('new_tier'),
+                        'new_privileges': tier_data.get('new_privileges', []),
+                        'timestamp': time.time()
+                    }
+                )
+            
+            # Send success response to voter
+            await self.send(text_data=json.dumps({
+                'type': 'vote.success',
+                'message_id': message_id,
+                'vote_type': vote_type,
+                'ranking_data': vote_result.get('ranking_data', {}),
+                'timestamp': time.time()
+            }))
+        else:
+            # Send error response
+            error_message = vote_result.get('error', 'Failed to cast vote') if vote_result else 'Failed to cast vote'
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': error_message
+            }))
+    
     # Event handlers for broadcasting
     
     async def message_receive(self, event):
@@ -403,6 +495,45 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp']
         }))
     
+    async def reputation_update(self, event):
+        """Broadcast reputation update to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'reputation.update',
+            'user_id': event['user_id'],
+            'reputation_data': event['reputation_data'],
+            'timestamp': event['timestamp']
+        }))
+    
+    async def ranking_update(self, event):
+        """Broadcast ranking update to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'ranking.update',
+            'message_id': event['message_id'],
+            'ranking_data': event['ranking_data'],
+            'timestamp': event['timestamp']
+        }))
+    
+    async def moderation_notification(self, event):
+        """Broadcast moderation notification to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'moderation.notification',
+            'notification_type': event['notification_type'],
+            'message': event['message'],
+            'details': event.get('details', {}),
+            'timestamp': event['timestamp']
+        }))
+    
+    async def tier_update(self, event):
+        """Broadcast tier update notification to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'tier.update',
+            'user_id': event['user_id'],
+            'old_tier': event['old_tier'],
+            'new_tier': event['new_tier'],
+            'new_privileges': event.get('new_privileges', []),
+            'timestamp': event['timestamp']
+        }))
+    
     # Database operations
     
     @database_sync_to_async
@@ -420,7 +551,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     
     @database_sync_to_async
     def create_message(self, content, message_type, media_url):
-        """Create a new message in the database"""
+        """Create a new message in the database with moderation"""
         try:
             chatroom = Chatroom.objects.get(id=self.chatroom_id)
             message = Message.objects.create(
@@ -430,6 +561,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message_type=message_type,
                 media_url=media_url
             )
+            
+            # Apply AI moderation
+            try:
+                from moderation.services import ModerationService
+                moderation_result = ModerationService.moderate_content(message)
+                
+                # Only reject VERY severe violations (violence, self-harm with high toxicity)
+                # This reduces false positives from humor/sarcasm
+                if moderation_result.action_taken == 'rejected':
+                    message.delete()
+                    return None
+                # For shadowban/warning, allow message but log it
+                # This way humor isn't blocked, but repeat offenders still get penalized
+            except Exception as e:
+                # Log error but don't block message if moderation fails
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Moderation error: {e}")
+            
             return message
         except Exception:
             return None
@@ -489,6 +639,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return None
     
     @database_sync_to_async
+    def cast_vote(self, message_id, vote_type):
+        """Cast a vote on a message and return result with reputation/ranking updates"""
+        try:
+            from reputation.services import VotingService
+            from chat.models import Message
+            
+            message = Message.objects.get(id=message_id)
+            result = VotingService.cast_vote(self.user, message, vote_type)
+            
+            return result
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    @database_sync_to_async
     def serialize_message(self, message):
         """Serialize a message for JSON response"""
         # Convert relative media URL to absolute URL
@@ -509,6 +673,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
                 media_url = f"{base_url}{settings.MEDIA_URL}{media_url}"
         
+        # Get ranking data if available
+        ranking_data = {
+            'upvotes': 0,
+            'downvotes': 0,
+            'total_votes': 0,
+            'wilson_score': 0.0,
+            'upvote_percentage': 0.0,
+            'user_vote': None
+        }
+        
+        try:
+            from reputation.models import MessageRanking, Vote
+            
+            # Get ranking data
+            try:
+                ranking = MessageRanking.objects.get(message=message)
+                ranking_data['upvotes'] = ranking.upvotes
+                ranking_data['downvotes'] = ranking.downvotes
+                ranking_data['wilson_score'] = round(ranking.wilson_score, 4)
+            except MessageRanking.DoesNotExist:
+                pass
+            
+            ranking_data['total_votes'] = ranking_data['upvotes'] + ranking_data['downvotes']
+            if ranking_data['total_votes'] > 0:
+                ranking_data['upvote_percentage'] = round(
+                    (ranking_data['upvotes'] / ranking_data['total_votes']) * 100, 1
+                )
+            
+            # Get user's vote if available
+            try:
+                vote = Vote.objects.get(user=self.user, message=message)
+                ranking_data['user_vote'] = vote.vote_type
+            except Vote.DoesNotExist:
+                pass
+        except ImportError:
+            # Reputation app not available
+            pass
+        
         return {
             'id': str(message.id),
             'chatroom_id': str(message.chatroom.id) if message.chatroom else None,
@@ -520,7 +722,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'is_deleted': message.is_deleted,
             'is_pinned': message.is_pinned,
             'created_at': message.created_at.isoformat(),
-            'updated_at': message.updated_at.isoformat()
+            'updated_at': message.updated_at.isoformat(),
+            'ranking': ranking_data
         }
     
     async def check_rate_limit(self):

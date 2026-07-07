@@ -12,3 +12,7 @@ psycopg2-binary==2.9.11
 Pillow==12.0.0
 python-dotenv==1.0.1
 python-magic==0.4.27
+# AI Moderation dependencies
+openai==1.58.1
+better-profanity==0.7.0
+vaderSentiment==3.3.2

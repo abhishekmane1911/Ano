@@ -217,7 +217,7 @@ const MatchChat: React.FC = () => {
             {messages.map((msg, index) => {
               // --- FIXED ALIGNMENT LOGIC ---
               const myId = String(profile?.anonymous_id || '');
-              const senderId = String(msg.sender_anonymous_id || msg.sender_id || '');
+              const senderId = String(msg.sender_anonymous_id || msg.sender || '');
               
               let isOwn;
               
@@ -232,9 +232,9 @@ const MatchChat: React.FC = () => {
 
               // Grouping logic 
               const prevSender = index > 0 
-                ? (messages[index-1].sender_anonymous_id || messages[index-1].sender_id) 
+                ? (messages[index-1].sender_anonymous_id || messages[index-1].sender) 
                 : 'start';
-              const currSender = msg.sender_anonymous_id || msg.sender_id;
+              const currSender = msg.sender_anonymous_id || msg.sender;
               const isSequence = index > 0 && String(prevSender) === String(currSender);
 
               return (

@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ChatroomViewSet, MessageViewSet, search_messages
+from .views import ChatroomViewSet, MessageViewSet, PollViewSet, ConfessionViewSet, search_messages
 
 router = DefaultRouter()
 router.register(r'chatrooms', ChatroomViewSet, basename='chatroom')
 router.register(r'messages', MessageViewSet, basename='message')
+router.register(r'polls', PollViewSet, basename='poll')
+router.register(r'confessions', ConfessionViewSet, basename='confession')
 
 urlpatterns = [
     path('', include(router.urls)),

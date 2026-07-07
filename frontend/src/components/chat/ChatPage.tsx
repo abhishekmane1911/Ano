@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare } from 'lucide-react';
 import { useChatStore } from '../../stores/chatStore';
 import { chatApi } from '../../api/chat';
 import ChatroomList from './ChatroomList';
@@ -8,20 +10,27 @@ import SearchModal from './SearchModal';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 
 const ChatPage: React.FC = () => {
-  const { setCurrentChatroom, currentChatroom } = useChatStore();
+  const { setCurrentChatroom } = useChatStore();
   const [selectedChatroomId, setSelectedChatroomId] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Handle browser back button or initial load state
-  useEffect(() => {
-    if (!currentChatroom) setSelectedChatroomId(null);
-  }, [currentChatroom]);
+  const { roomId } = useParams<{ roomId?: string }>();
+  const navigate = useNavigate();
 
-  const handleSelectChatroom = async (chatroomId: string) => {
+  useEffect(() => {
+    if (roomId && roomId !== selectedChatroomId) {
+      handleSelectChatroom(roomId, false);
+    } else if (!roomId && selectedChatroomId) {
+      setSelectedChatroomId(null);
+      setCurrentChatroom(null);
+    }
+  }, [roomId]);
+
+  const handleSelectChatroom = async (chatroomId: string, updateUrl = true) => {
     try {
-      // Optimistic selection for UI responsiveness
       setSelectedChatroomId(chatroomId);
+      if (updateUrl) navigate(`/chat/${chatroomId}`);
       const chatroom = await chatApi.getChatroom(chatroomId);
       setCurrentChatroom(chatroom);
     } catch (err) {
@@ -29,30 +38,20 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleBackToList = () => {
-    setSelectedChatroomId(null);
-    setCurrentChatroom(null);
-  };
+  const handleBackToList = () => navigate('/chat');
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#f3f4f6] dark:bg-[#0f172a] pt-24">
-      {' '}
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-50/50 via-white/50 to-purple-50/50 dark:from-indigo-950/30 dark:via-gray-950/80 dark:to-purple-950/30" />
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-purple-400/20 dark:bg-purple-600/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-indigo-400/20 dark:bg-indigo-600/10 rounded-full blur-[100px]" />
-      </div>
-      <div className="relative z-10 w-full h-full max-w-7xl mx-auto flex md:px-6 pb-4 gap-6">
-        {' '}
-        {/* Sidebar - Chatroom List */}
+    <div className="w-full h-screen bg-slate-50 dark:bg-slate-950 pt-24 mobile:pt-24">
+      <div className="w-full h-full max-w-6xl mx-auto flex mobile:flex-col md:px-6 pb-4 mobile:pb-0 gap-4 mobile:gap-0">
         <AnimatePresence mode="wait">
           {(!isMobile || !selectedChatroomId) && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className={`w-full md:w-80 lg:w-96 h-full flex-shrink-0 ${isMobile ? 'absolute inset-0 z-20' : ''}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className={`w-full md:w-72 lg:w-80 h-full flex-shrink-0 ${isMobile ? 'absolute inset-0 z-20 mobile:relative mobile:h-full' : ''
+                }`}
             >
               <ChatroomList
                 onSelectChatroom={handleSelectChatroom}
@@ -62,28 +61,30 @@ const ChatPage: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Main Chat Window */}
+
         <AnimatePresence mode="wait">
           {selectedChatroomId ? (
             <motion.div
               key="chat-window"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="flex-1 h-full relative z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className={`flex-1 h-full ${isMobile ? 'absolute inset-0 mobile:relative' : ''}`}
             >
               <ChatWindow chatroomId={selectedChatroomId} onBack={handleBackToList} />
             </motion.div>
           ) : (
             <div className="hidden md:flex flex-1 items-center justify-center h-full">
-              <div className="text-center p-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl">
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg shadow-indigo-500/20">
-                  💬
+              <div className="text-center max-w-xs">
+                <div className="w-10 h-10 mx-auto mb-4 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400">
+                  <MessageSquare size={18} strokeWidth={1.75} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Ano Chat</h2>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Select a room to start chatting anonymously.
+                <h2 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-1">
+                  No room selected
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Choose a room from the list to start chatting.
                 </p>
               </div>
             </div>

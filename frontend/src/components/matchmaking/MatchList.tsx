@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Clock, Sparkles, ChevronRight } from 'lucide-react';
+import { MessageCircle, Clock, Sparkles } from 'lucide-react';
 import { useMatchmakingStore } from '../../stores/matchmakingStore';
 import { matchmakingAPI } from '../../api/matchmaking';
 

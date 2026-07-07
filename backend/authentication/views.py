@@ -22,6 +22,7 @@ from .serializers import (
 )
 from .tasks import send_verification_email, send_password_reset_email
 from ano_backend.logging_config import get_anonymous_id_from_user
+from security.authentication import EnhancedAuthenticationService
 
 User = get_user_model()
 
@@ -122,19 +123,25 @@ def verify_email_view(request):
 def login_view(request):
     """
     Authenticate user and return JWT tokens.
-    Returns access token, refresh token, and user details.
+    Simplified version without complex middleware interference.
     """
-    serializer = LoginSerializer(data=request.data)
-    
-    if serializer.is_valid():
-        email = serializer.validated_data['email'].lower()
-        password = serializer.validated_data['password']
+    try:
+        # Get credentials from request
+        email = request.data.get('email', '').lower().strip()
+        password = request.data.get('password', '')
         
-        # Authenticate user
-        user = authenticate(request, username=email, password=password)
+        if not email or not password:
+            return Response({
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'Email and password are required'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        if user is None:
-            security_logger.warning(f"Failed login attempt for email domain: {email.split('@')[1] if '@' in email else 'invalid'}")
+        # Find user by email
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             return Response({
                 'error': {
                     'code': 'INVALID_CREDENTIALS',
@@ -142,8 +149,17 @@ def login_view(request):
                 }
             }, status=status.HTTP_401_UNAUTHORIZED)
         
+        # Check password
+        if not user.check_password(password):
+            return Response({
+                'error': {
+                    'code': 'INVALID_CREDENTIALS',
+                    'message': 'Invalid email or password'
+                }
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is active
         if not user.is_active:
-            logger.info(f"Login attempted for unverified user_{user.id}")
             return Response({
                 'error': {
                     'code': 'ACCOUNT_NOT_VERIFIED',
@@ -151,17 +167,23 @@ def login_view(request):
                 }
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Generate tokens
+        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
-        # Log successful login with anonymous ID
-        anonymous_id = get_anonymous_id_from_user(user)
-        logger.info(f"Successful login for {anonymous_id or f'user_{user.id}'}")
+        # Prepare user data
+        user_data = {
+            'id': str(user.id),
+            'email': user.email,
+            'username': user.username,
+            'is_verified': user.is_verified,
+            'date_joined': user.date_joined.isoformat(),
+            'isAdmin': user.is_staff or user.is_superuser
+        }
         
         response_data = {
             'access': str(refresh.access_token),
             'refresh': str(refresh),
-            'user': UserSerializer(user).data
+            'user': user_data
         }
         
         # Create response with refresh token in HTTP-only cookie
@@ -170,21 +192,26 @@ def login_view(request):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=not settings.DEBUG,  # HTTPS only in production
+            secure=not settings.DEBUG,
             samesite='Lax',
             max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
         )
         
+        logger.info(f"Successful login for user_{user.id}")
         return response
     
-    logger.warning(f"Login validation failed: {serializer.errors}")
-    return Response({
-        'error': {
-            'code': 'VALIDATION_ERROR',
-            'message': 'Invalid login data',
-            'details': serializer.errors
-        }
-    }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        logger.error(f"Login error: {str(e)}\n{error_trace}")
+        
+        return Response({
+            'error': {
+                'code': 'INTERNAL_ERROR',
+                'message': 'An error occurred during login',
+                'details': str(e) if settings.DEBUG else 'Internal server error'
+            }
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

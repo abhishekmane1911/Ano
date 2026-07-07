@@ -16,12 +16,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ano_backend.settings")
 
 django_asgi_app = get_asgi_application()
 
-# Import routing after Django setup
 from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
 from matchmaking.routing import websocket_urlpatterns as matchmaking_websocket_urlpatterns
 from chat.middleware import JWTAuthMiddleware
 
-# Combine all WebSocket URL patterns
 websocket_urlpatterns = chat_websocket_urlpatterns + matchmaking_websocket_urlpatterns
 
 application = ProtocolTypeRouter(

@@ -39,6 +39,23 @@ DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# Performance Optimization Settings
+if not DEBUG:
+    # Database connection pooling for production
+    CONN_MAX_AGE = 600  # 10 minutes
+    
+    # Disable debug toolbar in production
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: False,
+    }
+    
+    # Session optimization
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+    
+    # Static files optimization
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
 
 # Application definition
 
@@ -49,19 +66,24 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Third-party apps
+    
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "channels",
-    # Local apps
+    
+    "ano_backend",  
     "authentication",
     "profiles",
     "chat",
     "matchmaking",
     "reports",
     "admin_dashboard",
+    # Advanced gamification modules
+    "reputation",
+    "moderation",
+    "security",
 ]
 
 MIDDLEWARE = [
@@ -70,11 +92,10 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware", 
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "authentication.middleware.RateLimitMiddleware",
     "ano_backend.middleware.SecurityHeadersMiddleware",
     "ano_backend.middleware.AnonymousLoggingMiddleware",
 ]
@@ -217,7 +238,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Celery Configuration
+# Celery config
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -225,7 +246,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# Email Configuration
+# Email config
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 EMAIL_FILE_PATH = os.getenv("EMAIL_FILE_PATH", "/tmp/app-messages")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
@@ -242,7 +263,12 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
 ]
 
-# Security Settings
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',    
+]
+
+# Security settings
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
@@ -297,14 +323,54 @@ AUTH_USER_MODEL = 'authentication.User'
 # Frontend URL for email verification links
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-# Site URL for building absolute URLs (used in WebSocket consumers)
-SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
+# Advanced Gamification Modules Configuration
 
-# Cache Configuration (for rate limiting)
+# Reputation System Settings
+REPUTATION_SETTINGS = {
+    'POINTS': {
+        'message_upvote': 5,
+        'message_downvote': -2,
+        'validated_report': -50,
+    },
+    'TIER_THRESHOLDS': {
+        'Sophomore': 100,
+        'Senior': 500,
+        'Campus Legend': 1000,
+    }
+}
+
+# Moderation System Settings
+MODERATION_SETTINGS = {
+    'ENABLED': os.getenv('MODERATION_ENABLED', 'True') == 'True',
+    'TOXICITY_THRESHOLD': float(os.getenv('MODERATION_TOXICITY_THRESHOLD', '0.85')),
+    'BLOCK_VIOLENCE': os.getenv('MODERATION_BLOCK_VIOLENCE', 'True') == 'True',
+    'BLOCK_SELF_HARM': os.getenv('MODERATION_BLOCK_SELF_HARM', 'True') == 'True',
+    'BLOCK_HARASSMENT': os.getenv('MODERATION_BLOCK_HARASSMENT', 'False') == 'True',
+    'DEFAULT_SHADOWBAN_HOURS': 24,
+    'HEAT_SYSTEM_ENABLED': True,
+    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
+}
+
+# Security System Settings
+SECURITY_SETTINGS = {
+    'RATE_LIMITS': {
+        'post_creation': (5, 600),  # 5 posts per 10 minutes
+        'comment_creation': (20, 600),  # 20 comments per 10 minutes
+        'vote_casting': (100, 3600),  # 100 votes per hour
+        'login_attempt': (5, 300),  # 5 login attempts per 5 minutes
+        'api_request': (1000, 3600),  # 1000 API requests per hour
+    },
+    'INPUT_SANITIZATION_ENABLED': True,
+    'IDENTITY_HASHING_ENABLED': True,
+}
+
+# Cache Configuration (for rate limiting and performance)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1",
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'KEY_PREFIX': 'ano_platform',
     }
 }
 

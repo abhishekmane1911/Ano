@@ -2,13 +2,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import './Toast.css';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'reputation' | 'moderation';
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
 
 export interface Toast {
   id: string;
   message: string;
   type: ToastType;
   duration?: number;
+  action?: ToastAction;
 }
 
 interface ToastProps {
@@ -36,8 +42,31 @@ const ToastComponent = ({ toast, onClose }: ToastProps) => {
         return '⚠';
       case 'info':
         return 'ℹ';
+      case 'reputation':
+        return '⭐';
+      case 'moderation':
+        return '🛡';
       default:
         return '';
+    }
+  };
+
+  const getIconColor = () => {
+    switch (toast.type) {
+      case 'success':
+        return 'text-green-500';
+      case 'error':
+        return 'text-red-500';
+      case 'warning':
+        return 'text-yellow-500';
+      case 'info':
+        return 'text-blue-500';
+      case 'reputation':
+        return 'text-purple-500';
+      case 'moderation':
+        return 'text-orange-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
@@ -49,8 +78,18 @@ const ToastComponent = ({ toast, onClose }: ToastProps) => {
       exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
       layout
     >
-      <div className="toast-icon">{getIcon()}</div>
-      <div className="toast-message">{toast.message}</div>
+      <div className={`toast-icon ${getIconColor()}`}>{getIcon()}</div>
+      <div className="toast-content">
+        <div className="toast-message">{toast.message}</div>
+        {toast.action && (
+          <button
+            className="toast-action"
+            onClick={toast.action.onClick}
+          >
+            {toast.action.label}
+          </button>
+        )}
+      </div>
       <button
         className="toast-close"
         onClick={() => onClose(toast.id)}

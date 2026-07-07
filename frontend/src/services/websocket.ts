@@ -1,5 +1,7 @@
 import { useChatStore, type Message } from '../stores/chatStore';
 import { useAuthStore } from '../stores/authStore';
+import { useReputationStore } from '../stores/reputationStore';
+import { useToastStore } from '../hooks/useToast';
 
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000/ws';
 
@@ -115,11 +117,23 @@ export class ChatWebSocketService {
         case 'read.receipt':
           this.handleReadReceipt(data);
           break;
+        case 'vote_update':
+          this.handleVoteUpdate(data);
+          break;
+        case 'reputation_update':
+          this.handleReputationUpdate(data);
+          break;
+        case 'tier_update':
+          this.handleTierUpdate(data);
+          break;
         case 'error':
-          console.error('WebSocket error:', data.message);
+          useToastStore.getState().addToast(
+            data.message || 'An error occurred',
+            data.spam_detected ? 'moderation' : 'error'
+          );
           break;
         default:
-          console.log('Unknown message type:', type);
+          break;
       }
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
@@ -254,9 +268,47 @@ export class ChatWebSocketService {
     }
   }
 
-  private handleReadReceipt(data: { message_id: string; profile_id: string }): void {
-    // Handle read receipt (could update UI to show who read the message)
-    console.log('Read receipt:', data);
+  private handleReadReceipt(_data: { message_id: string; profile_id: string }): void {
+    // Read receipts are informational only; no store update needed currently
+  }
+
+  private handleVoteUpdate(data: {
+    message_id: string;
+    chatroom_id: string;
+    upvotes: number;
+    downvotes: number;
+    user_vote: 'upvote' | 'downvote' | null;
+  }): void {
+    const chatroomId = data.chatroom_id || this.chatroomId;
+    if (chatroomId) {
+      useChatStore.getState().updateVote(
+        chatroomId,
+        data.message_id,
+        data.upvotes,
+        data.downvotes,
+        data.user_vote
+      );
+    }
+  }
+
+  private handleReputationUpdate(data: {
+    reputation_score?: number;
+    level?: number;
+    rank_tier?: string;
+    total_upvotes_received?: number;
+    total_downvotes_received?: number;
+  }): void {
+    useReputationStore.getState().applyReputationUpdate(data as any);
+  }
+
+  private handleTierUpdate(data: { new_tier: string; new_level: number }): void {
+    const tier = data.new_tier as any;
+    useReputationStore.getState().applyTierUpdate(tier, data.new_level);
+    useToastStore.getState().addToast(
+      `🎉 Rank up! You're now ${data.new_tier}`,
+      'reputation',
+      5000
+    );
   }
 
   // Send methods

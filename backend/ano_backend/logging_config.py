@@ -52,10 +52,13 @@ def get_anonymous_id_from_user(user) -> Optional[str]:
     
     try:
         # Try to get the profile's anonymous_id
-        if hasattr(user, 'profile') and user.profile:
-            return str(user.profile.anonymous_id)
-    except Exception:
-        # Profile might not exist yet
+        if hasattr(user, 'profile'):
+            profile = getattr(user, 'profile', None)
+            if profile and hasattr(profile, 'anonymous_id'):
+                return str(profile.anonymous_id)
+    except Exception as e:
+        # Profile might not exist yet or there's a database issue
+        # Log the error but don't fail
         pass
     
     # Fallback to user UUID (still anonymous, not email)

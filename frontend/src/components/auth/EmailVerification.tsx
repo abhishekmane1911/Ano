@@ -34,7 +34,7 @@ const EmailVerification = () => {
       }
 
       setTimeout(() => {
-        navigate('/profile/create');
+        navigate('/profile');
       }, 2000);
     } catch (err: any) {
       setStatus('error');
@@ -90,7 +90,7 @@ const EmailVerification = () => {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Verified!</h3>
             <p className="text-green-600 dark:text-green-400 mb-6">{message}</p>
-            <p className="text-sm text-gray-400">Redirecting you to profile creation...</p>
+            <p className="text-sm text-gray-400">Redirecting you to your profile...</p>
           </motion.div>
         );
 

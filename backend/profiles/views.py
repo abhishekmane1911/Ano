@@ -4,29 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Profile
-from .serializers import ProfileSerializer, ProfileCreateSerializer
-
-
-class ProfileCreateView(generics.CreateAPIView):
-    """Create a new profile for the authenticated user"""
-    serializer_class = ProfileCreateSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def create(self, request, *args, **kwargs):
-        # Check if user already has a profile
-        if hasattr(request.user, 'profile'):
-            return Response(
-                {'error': 'Profile already exists for this user'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        profile = serializer.save()
-        
-        # Return the profile using ProfileSerializer to include anonymous_id
-        response_serializer = ProfileSerializer(profile)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+from .serializers import ProfileSerializer
 
 
 class ProfileMeView(generics.RetrieveUpdateAPIView):
@@ -35,8 +13,9 @@ class ProfileMeView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
-        """Get the profile for the authenticated user"""
-        return get_object_or_404(Profile, user=self.request.user)
+        """Get or create the profile for the authenticated user"""
+        profile, created = Profile.objects.get_or_create(user=self.request.user)
+        return profile
 
 
 class ProfileDetailView(generics.RetrieveAPIView):

@@ -41,6 +41,21 @@ class ChatroomAPITestCase(TestCase):
             created_by=self.user
         )
         
+        # Create reputation records for users to have voting privileges
+        from reputation.models import UserReputation
+        reputation, created = UserReputation.objects.get_or_create(
+            user=self.user,
+            defaults={
+                'reputation_score': 200.0,  # Enough for Sophomore tier (voting privileges)
+                'rank_tier': 'Sophomore'
+            }
+        )
+        if not created:
+            # Update existing record
+            reputation.reputation_score = 200.0
+            reputation.rank_tier = 'Sophomore'
+            reputation.save()
+        
         # Authenticate client
         self.client.force_authenticate(user=self.user)
     
@@ -151,6 +166,34 @@ class MessageAPITestCase(TestCase):
             name='Test Chatroom',
             description='A test chatroom'
         )
+        
+        # Create reputation records for users to have voting privileges
+        from reputation.models import UserReputation
+        reputation1, created = UserReputation.objects.get_or_create(
+            user=self.user1,
+            defaults={
+                'reputation_score': 200.0,  # Enough for Sophomore tier (voting privileges)
+                'rank_tier': 'Sophomore'
+            }
+        )
+        if not created:
+            # Update existing record
+            reputation1.reputation_score = 200.0
+            reputation1.rank_tier = 'Sophomore'
+            reputation1.save()
+            
+        reputation2, created = UserReputation.objects.get_or_create(
+            user=self.user2,
+            defaults={
+                'reputation_score': 200.0,  # Enough for Sophomore tier (voting privileges)
+                'rank_tier': 'Sophomore'
+            }
+        )
+        if not created:
+            # Update existing record
+            reputation2.reputation_score = 200.0
+            reputation2.rank_tier = 'Sophomore'
+            reputation2.save()
         
         # Create message
         self.message = Message.objects.create(

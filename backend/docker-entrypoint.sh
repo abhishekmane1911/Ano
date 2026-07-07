@@ -14,18 +14,20 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "Creating superuser if needed..."
-python manage.py shell << END
+python manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
-if not User.objects.filter(email='${DJANGO_SUPERUSER_EMAIL}').exists():
+# Check both email and username to avoid duplicate key errors
+if not User.objects.filter(email='$DJANGO_SUPERUSER_EMAIL').exists() and not User.objects.filter(username='admin').exists():
     User.objects.create_superuser(
-        email='${DJANGO_SUPERUSER_EMAIL}',
-        password='${DJANGO_SUPERUSER_PASSWORD}'
+        username='admin',
+        email='$DJANGO_SUPERUSER_EMAIL',
+        password='$DJANGO_SUPERUSER_PASSWORD'
     )
     print('Superuser created')
 else:
     print('Superuser already exists')
-END
+EOF
 
 # Start the appropriate server based on SERVER_TYPE
 if [ "$SERVER_TYPE" = "asgi" ]; then

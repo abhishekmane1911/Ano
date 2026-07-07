@@ -286,5 +286,5 @@ Can't find what you're looking for?
 ---
 
 **Last Updated**: 2024-01-01  
-**Maintained By**: Ano Development Team  
+**Maintained By**: AB
 **Questions?** Open an issue or contact the team

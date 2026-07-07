@@ -67,10 +67,16 @@ class LoginSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details"""
+    isAdmin = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'is_verified', 'date_joined')
-        read_only_fields = ('id', 'email', 'is_verified', 'date_joined')
+        fields = ('id', 'email', 'username', 'is_verified', 'date_joined', 'isAdmin')
+        read_only_fields = ('id', 'email', 'is_verified', 'date_joined', 'isAdmin')
+    
+    def get_isAdmin(self, obj):
+        """Check if user is admin (staff or superuser)"""
+        return obj.is_staff or obj.is_superuser
 
 
 class TokenSerializer(serializers.Serializer):

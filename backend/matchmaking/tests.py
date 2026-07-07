@@ -74,7 +74,7 @@ class MatchmakingTestCase(TestCase):
         """Test swiping left on a profile"""
         self.client.force_authenticate(user=self.user1)
         response = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),  # Use anonymous_id instead of id
             'direction': 'left'
         })
         
@@ -89,7 +89,7 @@ class MatchmakingTestCase(TestCase):
         """Test swiping right without mutual match"""
         self.client.force_authenticate(user=self.user1)
         response = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),
             'direction': 'right'
         })
         
@@ -105,7 +105,7 @@ class MatchmakingTestCase(TestCase):
         # User1 swipes right on User2
         self.client.force_authenticate(user=self.user1)
         response1 = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),
             'direction': 'right'
         })
         self.assertEqual(response1.data['is_match'], False)
@@ -113,7 +113,7 @@ class MatchmakingTestCase(TestCase):
         # User2 swipes right on User1 - should create match
         self.client.force_authenticate(user=self.user2)
         response2 = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile1.id),
+            'swiped': str(self.profile1.anonymous_id),
             'direction': 'right'
         })
         
@@ -139,7 +139,7 @@ class MatchmakingTestCase(TestCase):
         
         # Swipe on profile2
         self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),
             'direction': 'left'
         })
         
@@ -250,7 +250,7 @@ class MatchmakingTestCase(TestCase):
         """Test that users cannot swipe on their own profile"""
         self.client.force_authenticate(user=self.user1)
         response = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile1.id),
+            'swiped': str(self.profile1.anonymous_id),
             'direction': 'right'
         })
         
@@ -262,14 +262,14 @@ class MatchmakingTestCase(TestCase):
         
         # First swipe
         response1 = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),
             'direction': 'left'
         })
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         
         # Second swipe on same profile
         response2 = self.client.post('/api/matchmaking/swipe/', {
-            'swiped': str(self.profile2.id),
+            'swiped': str(self.profile2.anonymous_id),
             'direction': 'right'
         })
         self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)

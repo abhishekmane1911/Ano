@@ -1,18 +1,18 @@
 import { create } from 'zustand';
-import type { Toast, ToastType } from '../components/common/Toast';
+import type { Toast, ToastType, ToastAction } from '../components/common/Toast';
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (message: string, type: ToastType, duration?: number) => void;
+  addToast: (message: string, type: ToastType, duration?: number, action?: ToastAction) => void;
   removeToast: (id: string) => void;
   clearAll: () => void;
 }
 
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
-  addToast: (message, type, duration) => {
+  addToast: (message, type, duration, action) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
-    const toast: Toast = { id, message, type, duration };
+    const toast: Toast = { id, message, type, duration, action };
     set((state) => ({ toasts: [...state.toasts, toast] }));
   },
   removeToast: (id) => {
@@ -25,9 +25,17 @@ export const useToast = () => {
   const { addToast } = useToastStore();
 
   return {
-    success: (message: string, duration?: number) => addToast(message, 'success', duration),
-    error: (message: string, duration?: number) => addToast(message, 'error', duration),
-    warning: (message: string, duration?: number) => addToast(message, 'warning', duration),
-    info: (message: string, duration?: number) => addToast(message, 'info', duration),
+    success: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'success', duration, action),
+    error: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'error', duration, action),
+    warning: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'warning', duration, action),
+    info: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'info', duration, action),
+    reputation: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'reputation', duration, action),
+    moderation: (message: string, duration?: number, action?: ToastAction) => 
+      addToast(message, 'moderation', duration, action),
   };
 };

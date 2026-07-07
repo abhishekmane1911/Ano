@@ -12,7 +12,10 @@ import io
 import os
 from django.conf import settings
 
-from .models import Chatroom, Message, MessageReaction, ReadReceipt
+# Import privilege enforcement decorators
+from reputation.services import require_privilege_drf
+
+from .models import Chatroom, Message, MessageReaction, ReadReceipt, Poll, PollVote, Confession
 from .serializers import (
     ChatroomSerializer,
     MessageSerializer,
@@ -21,7 +24,12 @@ from .serializers import (
     ReactionCreateSerializer,
     MessageReactionSerializer,
     ReadReceiptSerializer,
-    MessageSearchResultSerializer
+    MessageSearchResultSerializer,
+    PollSerializer,
+    PollCreateSerializer,
+    PollVoteSerializer,
+    ConfessionSerializer,
+    ConfessionCreateSerializer
 )
 from matchmaking.models import Match
 
@@ -56,19 +64,57 @@ class ChatroomViewSet(viewsets.ModelViewSet):
     def messages(self, request, pk=None):
         """Get paginated messages for a chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
+        
+        # Get ordering parameter
+        ordering = request.query_params.get('ordering', 'created_at')
+        
+        # Base queryset
         messages = Message.objects.filter(
             chatroom=chatroom,
             is_deleted=False
-        ).select_related('sender').prefetch_related('reactions')
+        ).select_related('sender').prefetch_related(
+            'reactions',
+            'ranking',
+        )
+        
+        # Apply ordering based on parameter
+        if ordering == 'wilson_score':
+            # Order by Wilson Score (highest first)
+            try:
+                from reputation.models import MessageRanking
+                messages = messages.select_related('ranking').order_by('-ranking__wilson_score', '-created_at')
+            except ImportError:
+                # Fallback to created_at if reputation app not available
+                messages = messages.order_by('-created_at')
+        elif ordering == 'upvotes':
+            # Order by upvote count
+            try:
+                from reputation.models import MessageRanking
+                messages = messages.select_related('ranking').order_by('-ranking__upvotes', '-created_at')
+            except ImportError:
+                messages = messages.order_by('-created_at')
+        elif ordering == 'controversial':
+            # Order by most controversial (high total votes, low Wilson Score)
+            try:
+                from reputation.models import MessageRanking
+                from django.db.models import F
+                messages = messages.select_related('ranking').annotate(
+                    total_votes=F('ranking__upvotes') + F('ranking__downvotes')
+                ).filter(total_votes__gt=5).order_by('ranking__wilson_score', '-total_votes')
+            except ImportError:
+                messages = messages.order_by('-created_at')
+        else:
+            # Default: order by creation time (newest first for pagination, frontend will reverse)
+            messages = messages.order_by('-created_at')
         
         paginator = MessagePagination()
         page = paginator.paginate_queryset(messages, request)
         
         if page is not None:
-            serializer = MessageSerializer(page, many=True)
+            serializer = MessageSerializer(page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         
-        serializer = MessageSerializer(messages, many=True)
+        serializer = MessageSerializer(messages, many=True, context={'request': request})
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
@@ -98,6 +144,7 @@ class ChatroomViewSet(viewsets.ModelViewSet):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @require_privilege_drf('upload_images')
     @action(detail=True, methods=['post'], url_path='upload_media')
     def upload_media(self, request, pk=None):
         """Upload media file for chatroom"""
@@ -308,6 +355,7 @@ class MessageViewSet(viewsets.ViewSet):
         
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+    @require_privilege_drf('vote')
     @action(detail=True, methods=['post'])
     def react(self, request, pk=None):
         """Add a reaction to a message"""
@@ -488,3 +536,178 @@ def search_messages(request):
         'count': len(messages),
         'results': serializer.data
     })
+
+
+class PollViewSet(viewsets.ViewSet):
+    """ViewSet for Poll operations"""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        """List polls in a chatroom"""
+        chatroom_id = request.query_params.get('chatroom_id')
+        if not chatroom_id:
+            return Response(
+                {'error': 'chatroom_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            chatroom = Chatroom.objects.get(id=chatroom_id, is_active=True)
+        except Chatroom.DoesNotExist:
+            return Response(
+                {'error': 'Chatroom not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        polls = Poll.objects.filter(chatroom=chatroom, is_active=True).order_by('-created_at')
+        serializer = PollSerializer(polls, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    def retrieve(self, request, pk=None):
+        """Get poll details"""
+        poll = get_object_or_404(Poll, pk=pk, is_active=True)
+        serializer = PollSerializer(poll, context={'request': request})
+        return Response(serializer.data)
+    
+    @require_privilege_drf('create_polls')
+    def create(self, request):
+        """Create a new poll"""
+        chatroom_id = request.data.get('chatroom_id')
+        if not chatroom_id:
+            return Response(
+                {'error': 'chatroom_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            chatroom = Chatroom.objects.get(id=chatroom_id, is_active=True)
+        except Chatroom.DoesNotExist:
+            return Response(
+                {'error': 'Chatroom not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get user's profile
+        try:
+            profile = request.user.profile
+        except:
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = PollCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            poll = serializer.save(chatroom=chatroom, creator=profile)
+            response_serializer = PollSerializer(poll, context={'request': request})
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @require_privilege_drf('vote')
+    @action(detail=True, methods=['post'])
+    def vote(self, request, pk=None):
+        """Vote on a poll"""
+        poll = get_object_or_404(Poll, pk=pk, is_active=True)
+        
+        # Check if poll is expired
+        from django.utils import timezone
+        if poll.expires_at and timezone.now() > poll.expires_at:
+            return Response(
+                {'error': 'Poll has expired'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get user's profile
+        try:
+            profile = request.user.profile
+        except:
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = PollVoteSerializer(data=request.data, context={'poll': poll})
+        if serializer.is_valid():
+            option_index = serializer.validated_data['option_index']
+            
+            # Create or update vote
+            vote, created = PollVote.objects.update_or_create(
+                poll=poll,
+                voter=profile,
+                defaults={'option_index': option_index}
+            )
+            
+            # Return updated poll data
+            response_serializer = PollSerializer(poll, context={'request': request})
+            return Response(response_serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConfessionViewSet(viewsets.ViewSet):
+    """ViewSet for Confession operations"""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        """List approved confessions in a chatroom"""
+        chatroom_id = request.query_params.get('chatroom_id')
+        if not chatroom_id:
+            return Response(
+                {'error': 'chatroom_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            chatroom = Chatroom.objects.get(id=chatroom_id, is_active=True)
+        except Chatroom.DoesNotExist:
+            return Response(
+                {'error': 'Chatroom not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        confessions = Confession.objects.filter(
+            chatroom=chatroom,
+            is_approved=True,
+            is_active=True
+        ).order_by('-approved_at')
+        
+        serializer = ConfessionSerializer(confessions, many=True)
+        return Response(serializer.data)
+    
+    @require_privilege_drf('create_confessions')
+    def create(self, request):
+        """Create a new confession"""
+        chatroom_id = request.data.get('chatroom_id')
+        if not chatroom_id:
+            return Response(
+                {'error': 'chatroom_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            chatroom = Chatroom.objects.get(id=chatroom_id, is_active=True)
+        except Chatroom.DoesNotExist:
+            return Response(
+                {'error': 'Chatroom not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get user's profile
+        try:
+            profile = request.user.profile
+        except:
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = ConfessionCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            confession = serializer.save(chatroom=chatroom, creator=profile)
+            response_serializer = ConfessionSerializer(confession)
+            return Response({
+                'message': 'Confession submitted for approval',
+                'confession': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

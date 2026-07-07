@@ -13,6 +13,5 @@ urlpatterns = [
     path('password-reset/', views.password_reset_request_view, name='password-reset'),
     path('password-reset-confirm/', views.password_reset_confirm_view, name='password-reset-confirm'),
     path('test-email/', views.test_email_view, name='test-email'),  # Development only
-    path('get-reset-token/', views.get_reset_token_view, name='get-reset-token'),  # Development only
     path('get-reset-url/', views.get_reset_url_view, name='get-reset-url'),  # Development only
 ]

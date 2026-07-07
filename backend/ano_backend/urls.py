@@ -38,12 +38,18 @@ def health_check(request):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health_check, name="health_check"),
+    # Advanced health monitoring endpoints
+    path("api/monitoring/", include("ano_backend.health_urls")),
     path("api/auth/", include("authentication.urls")),
     path("api/profiles/", include("profiles.urls")),
     path("api/chat/", include("chat.urls")),
     path("api/matchmaking/", include("matchmaking.urls")),
     path("api/reports/", include("reports.urls")),
     path("api/admin/", include("admin_dashboard.urls")),
+    # Advanced gamification modules
+    path("api/reputation/", include("reputation.urls")),
+    path("api/moderation/", include("moderation.urls")),
+    path("api/security/", include("security.urls")),
 ]
 
 # Serve media files in development

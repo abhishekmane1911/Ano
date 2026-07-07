@@ -243,6 +243,45 @@ class MatchConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp']
         }))
     
+    async def reputation_update(self, event):
+        """Broadcast reputation update to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'reputation.update',
+            'user_id': event['user_id'],
+            'reputation_data': event['reputation_data'],
+            'timestamp': event['timestamp']
+        }))
+    
+    async def ranking_update(self, event):
+        """Broadcast ranking update to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'ranking.update',
+            'message_id': event['message_id'],
+            'ranking_data': event['ranking_data'],
+            'timestamp': event['timestamp']
+        }))
+    
+    async def moderation_notification(self, event):
+        """Broadcast moderation notification to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'moderation.notification',
+            'notification_type': event['notification_type'],
+            'message': event['message'],
+            'details': event.get('details', {}),
+            'timestamp': event['timestamp']
+        }))
+    
+    async def tier_update(self, event):
+        """Broadcast tier update notification to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'tier.update',
+            'user_id': event['user_id'],
+            'old_tier': event['old_tier'],
+            'new_tier': event['new_tier'],
+            'new_privileges': event.get('new_privileges', []),
+            'timestamp': event['timestamp']
+        }))
+    
     # Database operations
     
     @database_sync_to_async

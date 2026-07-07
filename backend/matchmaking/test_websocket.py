@@ -153,7 +153,7 @@ class MatchWebSocketTest(TransactionTestCase):
         
         self.assertEqual(response['type'], 'message.receive')
         self.assertEqual(response['message']['content'], 'Hello from match chat!')
-        self.assertEqual(response['message']['sender_id'], str(self.profile1.anonymous_id))
+        self.assertEqual(response['message']['sender_anonymous_id'], str(self.profile1.anonymous_id))
         self.assertEqual(response['message']['match_id'], str(self.match.id))
         
         # Verify message was saved to database

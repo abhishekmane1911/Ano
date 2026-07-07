@@ -9,7 +9,7 @@ interface MediaViewerProps {
 
 const MediaViewer: React.FC<MediaViewerProps> = ({ mediaUrl, mediaType, onClose }) => {
   useEffect(() => {
-    // Close on Escape key
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -17,8 +17,6 @@ const MediaViewer: React.FC<MediaViewerProps> = ({ mediaUrl, mediaType, onClose 
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
-    // Prevent body scroll when viewer is open
     document.body.style.overflow = 'hidden';
 
     return () => {

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useProfileStore } from '../../stores/profileStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, MessageCircle, Flame, User, Shield, Settings } from 'lucide-react';
+import { Menu, X, MessageCircle, User, Shield, Settings } from 'lucide-react';
 
 // --- Assets (Icons) ---
 // In a real project, use 'lucide-react'. I've embedded SVGs here for immediate portability.
@@ -18,6 +19,7 @@ import { Menu, X, MessageCircle, Flame, User, Shield, Settings } from 'lucide-re
 
 const Navigation = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { profile } = useProfileStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,10 +42,10 @@ const Navigation = () => {
       setIsDark(document.documentElement.classList.contains('dark'));
     };
     checkDarkMode();
-    
+
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -55,30 +57,29 @@ const Navigation = () => {
 
   const navLinks = isAuthenticated
     ? [
-        { path: '/chat', name: 'Chat', icon: <MessageCircle size={18} /> },
-        // { path: '/matchmaking', name: 'Matchmaking', icon: <Flame size={18} /> },
-        { path: '/profile/edit', name: 'Profile', icon: <User size={18} /> },
-        { path: '/safety', name: 'Safety', icon: <Shield size={18} /> },
-        ...(user?.isAdmin ? [{ path: '/admin', name: 'Admin', icon: <Settings size={18} /> }] : []),
-      ]
+      { path: '/chat', name: 'Chat', icon: <MessageCircle size={18} /> },
+      // { path: '/matchmaking', name: 'Matchmaking', icon: <Flame size={18} /> },
+      { path: '/profile', name: 'Profile', icon: <User size={18} /> },
+      { path: '/safety', name: 'Safety', icon: <Shield size={18} /> },
+      ...(user?.isAdmin ? [{ path: '/admin', name: 'Admin', icon: <Settings size={18} /> }] : []),
+    ]
     : [
-        { path: '/login', name: 'Login', icon: null },
-      ];
+      { path: '/login', name: 'Login', icon: null },
+    ];
 
   return (
     <motion.header
-      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 rounded-full ${
-        scrolled 
-          ? 'top-2 w-[88%] max-w-4xl' 
+      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 rounded-full ${scrolled
+          ? 'top-2 w-[88%] max-w-4xl'
           : 'top-4 w-[92%] max-w-5xl'
-      }`}
+        }`}
       style={{
         background: isDark
-          ? scrolled 
-            ? 'rgba(17, 24, 39, 0.8)' 
+          ? scrolled
+            ? 'rgba(17, 24, 39, 0.8)'
             : 'rgba(17, 24, 39, 0.7)'
-          : scrolled 
-            ? 'rgba(255, 255, 255, 0.75)' 
+          : scrolled
+            ? 'rgba(255, 255, 255, 0.75)'
             : 'rgba(255, 255, 255, 0.65)',
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -99,19 +100,19 @@ const Navigation = () => {
     >
       <div className="px-6 py-3">
         <nav className="flex items-center justify-between">
-          
+
           {/* Logo Section */}
-          <Link 
-            to={isAuthenticated ? '/' : '/landing'} 
+          <Link
+            to={isAuthenticated ? '/' : '/landing'}
             onClick={() => setIsMobileMenuOpen(false)}
             className="relative z-50 group"
           >
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="flex items-center gap-2"
             >
-              
+
               <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
                 Ano
               </h2>
@@ -125,7 +126,7 @@ const Navigation = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="relative px-4 py-2 text-sm font-medium transition-colors"
+                  className="relative px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale-subtle"
                   onMouseEnter={() => setHoveredPath(link.path)}
                 >
                   {hoveredPath === link.path && (
@@ -135,11 +136,10 @@ const Navigation = () => {
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
-                  <span className={`relative z-10 flex items-center gap-2 ${
-                    hoveredPath === link.path 
-                      ? 'text-gray-900 dark:text-white' 
+                  <span className={`relative z-10 flex items-center gap-2 transition-colors duration-200 ${hoveredPath === link.path
+                      ? 'text-gray-900 dark:text-white'
                       : 'text-gray-600 dark:text-gray-400'
-                  }`}>
+                    }`}>
                     {link.icon}
                     {link.name}
                   </span>
@@ -153,19 +153,19 @@ const Navigation = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-shadow"
+                    className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover-lift-subtle"
                   >
                     Sign Up
                   </motion.button>
                 </Link>
               )}
-              
+
               {isAuthenticated && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="px-5 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-full text-sm font-medium transition-all"
+                  className="px-5 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-full text-sm font-medium transition-all duration-200 hover-lift-subtle"
                 >
                   Logout
                 </motion.button>
@@ -200,16 +200,15 @@ const Navigation = () => {
                   key={link.path}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + idx * 0.1 }}
+                  transition={{ delay: 0.1 + idx * 0.1, type: "spring", stiffness: 300 }}
                 >
                   <Link
                     to={link.path}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-xl text-lg font-medium transition-all ${
-                      location.pathname === link.path
+                    className={`flex items-center gap-4 p-4 rounded-xl text-lg font-medium transition-all duration-200 tap-target hover-lift-subtle ${location.pathname === link.path
                         ? 'bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
-                    }`}
+                      }`}
                   >
                     {link.icon}
                     {link.name}
@@ -218,39 +217,39 @@ const Navigation = () => {
               ))}
 
               {!isAuthenticated && (
-                 <motion.div
-                 initial={{ opacity: 0, x: -20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 transition={{ delay: 0.3 }}
-               >
-                 <Link
-                   to="/signup"
-                   onClick={() => setIsMobileMenuOpen(false)}
-                   className="flex items-center justify-center gap-4 p-4 mt-4 rounded-xl text-lg font-bold bg-indigo-600 text-white shadow-lg"
-                 >
-                   Sign Up
-                 </Link>
-               </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+                >
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-4 p-4 mt-4 rounded-xl text-lg font-bold bg-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover-lift-subtle tap-target"
+                  >
+                    Sign Up
+                  </Link>
+                </motion.div>
               )}
             </div>
 
-            <motion.div 
-              initial={{ opacity: 0 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="mt-auto mb-10 flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-6"
             >
-               <span className="text-gray-500 text-sm">Settings</span>
-               <div className="flex items-center gap-4">
-                 {isAuthenticated && (
-                   <button 
-                     onClick={handleLogout} 
-                     className="text-red-500 font-medium text-sm"
-                   >
-                     Logout
-                   </button>
-                 )}
-               </div>
+              <span className="text-gray-500 text-sm">Settings</span>
+              <div className="flex items-center gap-4">
+                {isAuthenticated && (
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-500 font-medium text-sm"
+                  >
+                    Logout
+                  </button>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}

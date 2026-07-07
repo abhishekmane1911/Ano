@@ -173,3 +173,92 @@ class ReadReceipt(models.Model):
     
     def __str__(self):
         return f"Read by {self.profile.anonymous_id} at {self.read_at}"
+
+
+class Poll(models.Model):
+    """Poll for Campus Legend users"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    chatroom = models.ForeignKey(
+        Chatroom,
+        on_delete=models.CASCADE,
+        related_name='polls',
+        help_text='Chatroom this poll belongs to'
+    )
+    creator = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name='created_polls',
+        help_text='Profile that created this poll'
+    )
+    question = models.TextField(help_text='Poll question')
+    options = models.JSONField(help_text='Poll options as JSON array')
+    is_active = models.BooleanField(default=True, help_text='Whether the poll is active')
+    expires_at = models.DateTimeField(null=True, blank=True, help_text='Poll expiration time')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'polls'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Poll: {self.question[:50]}..."
+
+
+class PollVote(models.Model):
+    """Vote on a poll"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    poll = models.ForeignKey(
+        Poll,
+        on_delete=models.CASCADE,
+        related_name='votes',
+        help_text='Poll being voted on'
+    )
+    voter = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name='poll_votes',
+        help_text='Profile that voted'
+    )
+    option_index = models.IntegerField(help_text='Index of selected option')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'poll_votes'
+        unique_together = ['poll', 'voter']
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"Vote by {self.voter.anonymous_id} on poll {self.poll.id}"
+
+
+class Confession(models.Model):
+    """Anonymous confession for Campus Legend users"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    chatroom = models.ForeignKey(
+        Chatroom,
+        on_delete=models.CASCADE,
+        related_name='confessions',
+        help_text='Chatroom this confession belongs to'
+    )
+    creator = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name='created_confessions',
+        help_text='Profile that created this confession (kept for moderation)'
+    )
+    content = models.TextField(help_text='Confession content')
+    is_approved = models.BooleanField(default=False, help_text='Whether confession is approved')
+    is_active = models.BooleanField(default=True, help_text='Whether confession is active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'confessions'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Confession {self.id} - {'Approved' if self.is_approved else 'Pending'}"

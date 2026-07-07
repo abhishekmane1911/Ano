@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, MessageCircle, Globe, ArrowRight, Zap, Terminal } from 'lucide-react';
+import { Shield, MessageCircle, Globe, ArrowRight, Terminal } from 'lucide-react';
 
 const LandingPage = () => {
   // Staggered animation configuration

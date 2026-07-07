@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserX, AlertTriangle, CheckCircle } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
+import { useChatStore } from '../../stores/chatStore';
 
 interface BlockConfirmationProps {
   blockedUserId: string;
@@ -28,6 +29,9 @@ const BlockConfirmation: React.FC<BlockConfirmationProps> = ({
       await reportsAPI.blockUser({
         blocked_id: blockedUserId,
       });
+
+      // Instantly update local store so messages are removed and blocked
+      useChatStore.getState().addBlockedUser(blockedUserId);
 
       setSuccess(true);
       setTimeout(() => {

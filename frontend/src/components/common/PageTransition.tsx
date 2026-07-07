@@ -7,24 +7,15 @@ interface PageTransitionProps {
 }
 
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-  },
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -6 },
 };
 
 const pageTransition = {
   type: 'tween' as const,
-  ease: 'anticipate' as const,
-  duration: 0.3,
+  ease: 'easeOut' as const,
+  duration: 0.18,
 };
 
 export const PageTransition = ({ children, className = '' }: PageTransitionProps) => {
@@ -57,7 +48,7 @@ export const FadeTransition = ({ children, className = '' }: PageTransitionProps
       animate="animate"
       exit="exit"
       variants={fadeVariants}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
     >
       {children}
     </motion.div>
@@ -66,9 +57,9 @@ export const FadeTransition = ({ children, className = '' }: PageTransitionProps
 
 // Slide transition variant
 const slideVariants = {
-  initial: { x: '100%', opacity: 0 },
+  initial: { x: 24, opacity: 0 },
   animate: { x: 0, opacity: 1 },
-  exit: { x: '-100%', opacity: 0 },
+  exit: { x: -24, opacity: 0 },
 };
 
 export const SlideTransition = ({ children, className = '' }: PageTransitionProps) => {
@@ -79,7 +70,7 @@ export const SlideTransition = ({ children, className = '' }: PageTransitionProp
       animate="animate"
       exit="exit"
       variants={slideVariants}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
     >
       {children}
     </motion.div>
@@ -88,9 +79,9 @@ export const SlideTransition = ({ children, className = '' }: PageTransitionProp
 
 // Scale transition variant
 const scaleVariants = {
-  initial: { scale: 0.8, opacity: 0 },
+  initial: { scale: 0.98, opacity: 0 },
   animate: { scale: 1, opacity: 1 },
-  exit: { scale: 0.8, opacity: 0 },
+  exit: { scale: 0.98, opacity: 0 },
 };
 
 export const ScaleTransition = ({ children, className = '' }: PageTransitionProps) => {
@@ -101,7 +92,7 @@ export const ScaleTransition = ({ children, className = '' }: PageTransitionProp
       animate="animate"
       exit="exit"
       variants={scaleVariants}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
     >
       {children}
     </motion.div>
