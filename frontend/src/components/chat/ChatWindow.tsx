@@ -135,29 +135,47 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
           'warning'
         );
       }
-    } catch (error) {
-      console.error('Failed to vote:', error);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error;
+
+      if (errorMsg) {
+        useToastStore.getState().addToast(
+          errorMsg,
+          'warning'
+        );
+      } else if (error === '403' || error.response?.status === 403) {
+        useToastStore.getState().addToast(
+          'You need Sophomore tier to vote. Earn more reputation!',
+          'warning'
+        );
+      } else {
+        useToastStore.getState().addToast(
+          'Failed to vote. Please try again later.',
+          'error'
+        );
+        // console.error('Failed to vote:', error);
+      }
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 mobile:rounded-none md:rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-900 mobile:rounded-none md:rounded-lg border border-zinc-800 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 mobile:px-3 py-3.5 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between px-4 mobile:px-3 py-3.5 border-b border-zinc-800">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-1.5 -ml-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors tap-target"
+              className="md:hidden p-1.5 -ml-1.5 text-zinc-500 hover:bg-zinc-800 rounded-md transition-colors tap-target"
             >
               <ArrowLeft size={18} strokeWidth={1.75} />
             </button>
           )}
           <div className="min-w-0">
-            <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
+            <h2 className="font-semibold text-sm text-zinc-100 truncate">
               {currentChatroom?.name}
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+            <p className="text-xs text-zinc-500 truncate">
               {currentChatroom?.description || 'Welcome to the chat room'}
             </p>
           </div>
@@ -165,12 +183,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
 
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="flex items-center gap-1.5 text-xs">
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
-            <span className="text-slate-400 dark:text-slate-500">
+            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+            <span className="text-zinc-500">
               {isConnected ? 'Online' : 'Reconnecting…'}
             </span>
           </div>
-          <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors tap-target">
+          <button className="p-1.5 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-300 transition-colors tap-target">
             <MoreVertical size={18} strokeWidth={1.75} />
           </button>
         </div>
@@ -187,7 +205,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 mobile:p-3 space-y-1 bg-slate-50 dark:bg-slate-950/40 scroll-smooth custom-scrollbar"
+        className="flex-1 overflow-y-auto p-4 mobile:p-3 space-y-1 bg-zinc-950/40 scroll-smooth custom-scrollbar"
       >
         {loadingMore && (
           <div className="flex justify-center py-3">
@@ -231,7 +249,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
       </div>
 
       {/* Footer / Input */}
-      <div className="p-3 mobile:p-2 md:p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 safe-area-inset-bottom">
+      <div className="p-3 mobile:p-2 md:p-3 bg-zinc-900 border-t border-zinc-800 safe-area-inset-bottom">
         <TypingIndicator chatroomId={chatroomId} />
         <MessageInput
           onSendMessage={async (content, file) => {

@@ -71,7 +71,7 @@ export const ReputationBadge = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`inline-flex items-center gap-2 rounded-full backdrop-blur-md border ${config.bgColor} ${config.borderColor} ${config.color} ${sizeClasses[size]} font-medium ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border ${config.bgColor} ${config.borderColor} ${config.color} ${sizeClasses[size]} font-medium ${className}`}
     >
       {config.icon}
       <span>{tier}</span>
@@ -246,7 +246,7 @@ export const ReputationStats = ({ data, className = '' }: ReputationStatsProps) 
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-zinc-50">
           Reputation
         </h3>
         <ReputationBadge tier={data.tier} score={data.score} showProgress />
@@ -259,13 +259,13 @@ export const ReputationStats = ({ data, className = '' }: ReputationStatsProps) 
         xpForNextLevel={data.xpForNextLevel}
       />
 
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800">
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 text-green-500 mb-1">
             <TrendingUp size={16} />
             <span className="font-semibold">{data.totalUpvotesReceived}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Upvotes</p>
+          <p className="text-xs text-zinc-400">Upvotes</p>
         </div>
 
         <div className="text-center">
@@ -273,7 +273,7 @@ export const ReputationStats = ({ data, className = '' }: ReputationStatsProps) 
             <TrendingUp size={16} className="rotate-180" />
             <span className="font-semibold">{data.totalDownvotesReceived}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Downvotes</p>
+          <p className="text-xs text-zinc-400">Downvotes</p>
         </div>
       </div>
     </div>

@@ -157,6 +157,8 @@ class VoteResultSerializer(serializers.Serializer):
     success = serializers.BooleanField()
     vote_type = serializers.CharField(required=False)
     error = serializers.CharField(required=False)
+    ranking_data = serializers.DictField(required=False)
+
     reputation_update = serializers.DictField(required=False)
     tier_update = TierUpdateSerializer(required=False)
     privilege_info = PrivilegeInfoSerializer(required=False)

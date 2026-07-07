@@ -27,7 +27,6 @@ const Navigation = () => {
   const [hoveredPath, setHoveredPath] = useState(location.pathname);
   const [isDark, setIsDark] = useState(false);
 
-  // Handle scroll effect for glassmorphism
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -36,7 +35,6 @@ const Navigation = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Detect dark mode
   useEffect(() => {
     const checkDarkMode = () => {
       setIsDark(document.documentElement.classList.contains('dark'));
@@ -69,31 +67,10 @@ const Navigation = () => {
 
   return (
     <motion.header
-      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 rounded-full ${scrolled
-          ? 'top-2 w-[88%] max-w-4xl'
-          : 'top-4 w-[92%] max-w-5xl'
+      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 backdrop-blur-md ${scrolled
+        ? 'top-2 w-[88%] max-w-4xl shadow-md'
+        : 'top-4 w-[92%] max-w-5xl shadow-sm'
         }`}
-      style={{
-        background: isDark
-          ? scrolled
-            ? 'rgba(17, 24, 39, 0.8)'
-            : 'rgba(17, 24, 39, 0.7)'
-          : scrolled
-            ? 'rgba(255, 255, 255, 0.75)'
-            : 'rgba(255, 255, 255, 0.65)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        border: isDark
-          ? '1px solid rgba(255, 255, 255, 0.1)'
-          : '1px solid rgba(255, 255, 255, 0.4)',
-        boxShadow: isDark
-          ? scrolled
-            ? '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-            : '0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          : scrolled
-            ? '0 8px 32px rgba(31, 38, 135, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
-            : '0 4px 24px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-      }}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -113,7 +90,7 @@ const Navigation = () => {
               className="flex items-center gap-2"
             >
 
-              <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+              <h2 className="text-xl font-bold text-zinc-50 tracking-tight">
                 Ano
               </h2>
             </motion.div>
@@ -121,24 +98,24 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
-            <div className="flex items-center bg-gray-100/30 dark:bg-white/5 px-1.5 py-1.5 rounded-full border border-gray-200/30 dark:border-white/10 backdrop-blur-sm mr-4">
+            <div className="flex items-center px-1.5 py-1.5 rounded-full mr-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="relative px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale-subtle"
+                  className="relative px-4 py-2 text-sm font-medium transition-all duration-200"
                   onMouseEnter={() => setHoveredPath(link.path)}
                 >
                   {hoveredPath === link.path && (
                     <motion.div
                       layoutId="nav-pill"
-                      className="absolute inset-0 bg-white dark:bg-gray-800 rounded-full shadow-sm"
+                      className="absolute inset-0 bg-zinc-800 rounded-full shadow-sm"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
                   <span className={`relative z-10 flex items-center gap-2 transition-colors duration-200 ${hoveredPath === link.path
-                      ? 'text-gray-900 dark:text-white'
-                      : 'text-gray-600 dark:text-gray-400'
+                    ? 'text-zinc-50'
+                    : 'text-zinc-400'
                     }`}>
                     {link.icon}
                     {link.name}
@@ -147,13 +124,13 @@ const Navigation = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 pl-2 border-l border-zinc-800">
               {!isAuthenticated && (
                 <Link to="/signup">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover-lift-subtle"
+                    className="px-5 py-2.5 bg-zinc-100 text-zinc-950 rounded-full text-sm font-semibold shadow-md hover:bg-white transition-all duration-200"
                   >
                     Sign Up
                   </motion.button>
@@ -165,7 +142,7 @@ const Navigation = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="px-5 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-full text-sm font-medium transition-all duration-200 hover-lift-subtle"
+                  className="px-5 py-2.5 bg-zinc-800/50 text-red-400 hover:bg-zinc-800 hover:text-red-300 rounded-full text-sm font-medium transition-all duration-200"
                 >
                   Logout
                 </motion.button>
@@ -176,7 +153,7 @@ const Navigation = () => {
           {/* Mobile Toggle */}
           <motion.button
             whileTap={{ scale: 0.9 }}
-            className="md:hidden relative z-50 p-2 text-gray-800 dark:text-white"
+            className="md:hidden relative z-50 p-2 text-zinc-100"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
@@ -192,7 +169,7 @@ const Navigation = () => {
             animate={{ opacity: 1, height: '100vh' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden fixed inset-0 top-0 bg-white dark:bg-gray-950 pt-24 px-6 z-40 overflow-hidden flex flex-col"
+            className="md:hidden fixed inset-0 top-0 bg-zinc-950 pt-24 px-6 z-40 overflow-hidden flex flex-col"
           >
             <div className="flex flex-col gap-2">
               {navLinks.map((link, idx) => (
@@ -205,9 +182,9 @@ const Navigation = () => {
                   <Link
                     to={link.path}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-xl text-lg font-medium transition-all duration-200 tap-target hover-lift-subtle ${location.pathname === link.path
-                        ? 'bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
+                    className={`flex items-center gap-4 p-4 rounded-xl text-lg font-medium transition-all duration-200 tap-target ${location.pathname === link.path
+                      ? 'bg-zinc-800 text-blue-400'
+                      : 'text-zinc-400 hover:bg-zinc-900'
                       }`}
                   >
                     {link.icon}
@@ -225,7 +202,7 @@ const Navigation = () => {
                   <Link
                     to="/signup"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-4 p-4 mt-4 rounded-xl text-lg font-bold bg-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover-lift-subtle tap-target"
+                    className="flex items-center justify-center gap-4 p-4 mt-4 rounded-xl text-lg font-bold bg-blue-600 text-white shadow-md transition-all duration-200 tap-target"
                   >
                     Sign Up
                   </Link>
@@ -237,9 +214,9 @@ const Navigation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-auto mb-10 flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-6"
+              className="mt-auto mb-10 flex items-center justify-between border-t border-zinc-800 pt-6"
             >
-              <span className="text-gray-500 text-sm">Settings</span>
+              <span className="text-zinc-500 text-sm">Settings</span>
               <div className="flex items-center gap-4">
                 {isAuthenticated && (
                   <button

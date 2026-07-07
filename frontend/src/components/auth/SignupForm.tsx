@@ -86,21 +86,17 @@ const SignupForm = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#f3f4f6] dark:bg-[#0f172a] p-4 pt-18 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-zinc-950 p-4 pt-18 relative overflow-hidden">
       
-      {/* Background Ambience */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
-
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 relative z-10"
+        className="w-full max-w-md bg-zinc-900 rounded-3xl border border-zinc-800 p-8 relative z-10 shadow-sm"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Account</h1>
-          <p className="text-gray-500 dark:text-gray-400">Join the exclusive IIT Indore community</p>
+          <h1 className="text-3xl font-bold text-zinc-50 mb-2">Create Account</h1>
+          <p className="text-zinc-400">Join the exclusive IIT Indore community</p>
         </div>
 
         <AnimatePresence>
@@ -109,10 +105,10 @@ const SignupForm = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-start gap-3"
+              className="mb-6 p-4 bg-emerald-900/20 border border-emerald-800 rounded-xl flex items-start gap-3"
             >
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-700 dark:text-green-300">{successMessage}</p>
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-emerald-400">{successMessage}</p>
             </motion.div>
           )}
 
@@ -121,10 +117,10 @@ const SignupForm = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3"
+              className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-xl flex items-start gap-3"
             >
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-400">{errors.general}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -132,9 +128,9 @@ const SignupForm = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email Field */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Institute Email</label>
+            <label className="text-sm font-medium text-zinc-300 ml-1">Institute Email</label>
             <div className="relative group">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
                 <Mail size={20} />
               </div>
               <input
@@ -143,11 +139,11 @@ const SignupForm = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="your.name@iiti.ac.in"
-                className={`w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-3 bg-zinc-800/50 border rounded-xl outline-none transition-all ${
                   errors.email 
-                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
-                    : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                } text-gray-900 dark:text-white placeholder-gray-400`}
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-zinc-700 focus:border-blue-500'
+                } text-zinc-100 placeholder-zinc-500`}
               />
             </div>
             {errors.email && <p className="text-xs text-red-500 ml-1">{errors.email}</p>}
@@ -155,9 +151,9 @@ const SignupForm = () => {
 
           {/* Username Field */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Username</label>
+            <label className="text-sm font-medium text-zinc-300 ml-1">Username</label>
             <div className="relative group">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
                 <User size={20} />
               </div>
               <input
@@ -166,11 +162,11 @@ const SignupForm = () => {
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Choose a unique username"
-                className={`w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-3 bg-zinc-800/50 border rounded-xl outline-none transition-all ${
                   errors.username 
-                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
-                    : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                } text-gray-900 dark:text-white placeholder-gray-400`}
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-zinc-700 focus:border-blue-500'
+                } text-zinc-100 placeholder-zinc-500`}
               />
             </div>
             {errors.username && <p className="text-xs text-red-500 ml-1">{errors.username}</p>}
@@ -178,9 +174,9 @@ const SignupForm = () => {
 
           {/* Password Field */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Password</label>
+            <label className="text-sm font-medium text-zinc-300 ml-1">Password</label>
             <div className="relative group">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
                 <Lock size={20} />
               </div>
               <input
@@ -189,11 +185,11 @@ const SignupForm = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Create a strong password"
-                className={`w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-3 bg-zinc-800/50 border rounded-xl outline-none transition-all ${
                   errors.password 
-                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
-                    : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                } text-gray-900 dark:text-white placeholder-gray-400`}
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-zinc-700 focus:border-blue-500'
+                } text-zinc-100 placeholder-zinc-500`}
               />
             </div>
             {errors.password && <p className="text-xs text-red-500 ml-1">{errors.password}</p>}
@@ -201,9 +197,9 @@ const SignupForm = () => {
 
           {/* Confirm Password Field */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Confirm Password</label>
+            <label className="text-sm font-medium text-zinc-300 ml-1">Confirm Password</label>
             <div className="relative group">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
                 <Lock size={20} />
               </div>
               <input
@@ -212,11 +208,11 @@ const SignupForm = () => {
                 value={formData.password_confirm}
                 onChange={handleChange}
                 placeholder="Repeat your password"
-                className={`w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-3 bg-zinc-800/50 border rounded-xl outline-none transition-all ${
                   errors.password_confirm 
-                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
-                    : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                } text-gray-900 dark:text-white placeholder-gray-400`}
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-zinc-700 focus:border-blue-500'
+                } text-zinc-100 placeholder-zinc-500`}
               />
             </div>
             {errors.password_confirm && <p className="text-xs text-red-500 ml-1">{errors.password_confirm}</p>}
@@ -225,7 +221,7 @@ const SignupForm = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.99] mt-6"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.99] mt-6"
           >
             {isLoading ? (
               <>
@@ -242,11 +238,11 @@ const SignupForm = () => {
         </form>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <p className="text-zinc-500 text-sm">
             Already have an account?{' '}
             <Link 
               to="/login" 
-              className="text-indigo-600 dark:text-indigo-400 font-semibold hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
             >
               Sign in
             </Link>

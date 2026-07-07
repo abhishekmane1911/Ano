@@ -91,24 +91,20 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute>
               <PageTransition>
-                <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-12 px-4 md:px-8 flex flex-col items-center font-sans">
+                <div className="min-h-screen bg-zinc-950 pt-24 pb-12 px-4 md:px-8 flex flex-col items-center">
                   <div className="w-full max-w-5xl">
 
-
                     <div className="mb-8">
-                      <h1 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">
+                      <h1 className="text-2xl font-semibold text-zinc-50 tracking-tight">
                         Dashboard
                       </h1>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-sm text-zinc-400 mt-1">
                         Welcome back. Here is your overview.
                       </p>
                     </div>
 
                     {/* Reputation Panel */}
-                    <div className="mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                      {/* <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-                        Reputation Overview
-                      </h2> */}
+                    <div className="mb-8 bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
                       {myReputation ? (
                         <ReputationStats data={{
                           score: myReputation.reputation_score,
@@ -119,7 +115,7 @@ function AnimatedRoutes() {
                           totalDownvotesReceived: myReputation.total_downvotes_received,
                         }} />
                       ) : (
-                        <div className="text-sm text-slate-400 dark:text-slate-500 animate-pulse py-4">
+                        <div className="text-sm text-zinc-500 animate-pulse py-4">
                           Loading statistics...
                         </div>
                       )}
@@ -129,15 +125,15 @@ function AnimatedRoutes() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Chat Module */}
                       <Link to="/chat" className="group block h-full">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-colors h-full flex flex-col">
-                          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center mb-4">
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm hover:border-zinc-700 transition-colors h-full flex flex-col">
+                          <div className="w-10 h-10 bg-blue-900/20 text-blue-400 rounded-lg flex items-center justify-center mb-4">
                             <MessageCircle size={20} strokeWidth={2} />
                           </div>
-                          <h3 className="font-medium text-slate-900 dark:text-white mb-1">Chatrooms</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 flex-1">
+                          <h3 className="font-medium text-zinc-50 mb-1">Chatrooms</h3>
+                          <p className="text-sm text-zinc-400 flex-1">
                             Join live public discussions and connect with others.
                           </p>
-                          <div className="mt-4 flex items-center text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:gap-1.5 transition-all">
+                          <div className="mt-4 flex items-center text-sm text-zinc-300 font-medium group-hover:text-zinc-50 group-hover:gap-1.5 transition-all">
                             Open <ArrowRight size={16} className="ml-1" />
                           </div>
                         </div>
@@ -145,12 +141,12 @@ function AnimatedRoutes() {
 
                       {/* Safety Module */}
                       <Link to="/safety" className="group block h-full">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-colors h-full flex flex-col">
-                          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg flex items-center justify-center mb-4">
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm hover:border-zinc-700 transition-colors h-full flex flex-col">
+                          <div className="w-10 h-10 bg-zinc-800 text-zinc-400 rounded-lg flex items-center justify-center mb-4">
                             <Shield size={20} strokeWidth={2} />
                           </div>
-                          <h3 className="font-medium text-slate-900 dark:text-white mb-1">Safety & Privacy</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 flex-1">
+                          <h3 className="font-medium text-zinc-50 mb-1">Safety & Privacy</h3>
+                          <p className="text-sm text-zinc-400 flex-1">
                             Review guidelines and manage your blocks and reports.
                           </p>
                         </div>
@@ -158,12 +154,12 @@ function AnimatedRoutes() {
 
                       {/* Reputation Info Module */}
                       <Link to="/reputation-demo" className="group block h-full">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-colors h-full flex flex-col">
-                          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg flex items-center justify-center mb-4">
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm hover:border-zinc-700 transition-colors h-full flex flex-col">
+                          <div className="w-10 h-10 bg-zinc-800 text-zinc-400 rounded-lg flex items-center justify-center mb-4">
                             <Star size={20} strokeWidth={2} />
                           </div>
-                          <h3 className="font-medium text-slate-900 dark:text-white mb-1">Reputation Rules</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 flex-1">
+                          <h3 className="font-medium text-zinc-50 mb-1">Reputation Rules</h3>
+                          <p className="text-sm text-zinc-400 flex-1">
                             Learn how the leveling and progression system works.
                           </p>
                         </div>
@@ -172,7 +168,6 @@ function AnimatedRoutes() {
 
                   </div>
                 </div>
-                {/* --- END DASHBOARD UI --- */}
               </PageTransition>
             </ProtectedRoute>
           }
@@ -204,10 +199,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-[3px] border-slate-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500"></div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Loading workspace...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-[3px] border-zinc-800 border-t-blue-500"></div>
+          <p className="text-sm text-zinc-400 font-medium">Loading workspace...</p>
         </div>
       </div>
     );

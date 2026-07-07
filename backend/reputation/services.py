@@ -18,7 +18,7 @@ class TierPrivilegeManager:
     Handles privilege checking and enforcement based on user reputation tiers.
     """
     
-    # Define tier privileges according to requirements 2.1-2.4
+    
     TIER_PRIVILEGES = {
         'Fresher': ['read', 'write'],
         'Sophomore': ['read', 'write', 'vote'],
@@ -423,6 +423,11 @@ class VotingService:
                 'success': False,
                 'error': 'Insufficient privileges for voting',
                 'privilege_info': TierPrivilegeManager.get_privilege_info(user, 'vote')
+            }
+        if message.sender.user == user:
+            return {
+                'success': False,
+                'error': 'You cannot vote on your own messages',
             }
         
         with transaction.atomic():

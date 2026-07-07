@@ -99,7 +99,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, onTypingStar
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.12 }}
-            className="absolute bottom-full mb-3 left-0 z-50 shadow-md rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700"
+            className="absolute bottom-full mb-3 left-0 z-50 shadow-md rounded-lg overflow-hidden border border-zinc-700"
           >
             <EmojiPicker onEmojiClick={onEmojiClick} />
           </motion.div>
@@ -112,22 +112,22 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, onTypingStar
           <img
             src={filePreview}
             alt="Preview"
-            className="max-h-32 rounded-md border border-slate-200 dark:border-slate-700"
+            className="max-h-32 rounded-md border border-zinc-700"
           />
           <button
             onClick={handleRemoveFile}
-            className="absolute -top-2 -right-2 p-1 bg-slate-900 text-white rounded-full hover:bg-slate-700 transition-colors"
+            className="absolute -top-2 -right-2 p-1 bg-zinc-900 text-white rounded-full hover:bg-zinc-700 transition-colors"
           >
             <X size={14} />
           </button>
         </div>
       )}
 
-      <div className="flex items-end gap-1 bg-slate-50 dark:bg-slate-800/60 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors focus-within:border-slate-300 dark:focus-within:border-slate-600">
+      <div className="flex items-end gap-1 bg-zinc-800/60 p-1.5 rounded-lg border border-zinc-700 transition-colors focus-within:border-zinc-600">
         <div className="flex gap-0.5 mb-0.5">
           <button
             onClick={() => setShowEmoji(!showEmoji)}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+            className="p-2 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700 rounded-md transition-colors"
             title="Add emoji"
           >
             <Smile size={18} />
@@ -140,7 +140,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, onTypingStar
                 alert('You need to reach Senior tier to upload images! Earn reputation by getting upvotes.');
               }
             }}
-            className={`p-2 rounded-md transition-colors ${canUploadImages ? 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}
+            className={`p-2 rounded-md transition-colors ${canUploadImages ? 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700' : 'text-zinc-600 cursor-not-allowed'}`}
             title={canUploadImages ? "Attach image" : "Reach Senior tier to unlock image uploads"}
           >
             <ImageIcon size={18} />
@@ -162,15 +162,15 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, onTypingStar
           placeholder={selectedFile ? "Add a caption..." : "Message"}
           disabled={disabled}
           rows={1}
-          className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 py-2.5 max-h-32 min-h-[40px] resize-none custom-scrollbar"
+          className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-zinc-100 placeholder-zinc-500 py-2.5 max-h-32 min-h-[40px] resize-none custom-scrollbar"
         />
 
         <button
           onClick={handleSend}
           disabled={!canSend}
           className={`p-2 rounded-md mb-0.5 transition-colors ${canSend
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+              ? 'bg-blue-600 text-white hover:bg-blue-500'
+              : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
             }`}
         >
           <Send size={16} />

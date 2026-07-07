@@ -41,7 +41,7 @@ const ChatPage: React.FC = () => {
   const handleBackToList = () => navigate('/chat');
 
   return (
-    <div className="w-full h-screen bg-slate-50 dark:bg-slate-950 pt-24 mobile:pt-24">
+    <div className="w-full h-screen bg-zinc-950 pt-24 mobile:pt-24">
       <div className="w-full h-full max-w-6xl mx-auto flex mobile:flex-col md:px-6 pb-4 mobile:pb-0 gap-4 mobile:gap-0">
         <AnimatePresence mode="wait">
           {(!isMobile || !selectedChatroomId) && (
@@ -77,13 +77,13 @@ const ChatPage: React.FC = () => {
           ) : (
             <div className="hidden md:flex flex-1 items-center justify-center h-full">
               <div className="text-center max-w-xs">
-                <div className="w-10 h-10 mx-auto mb-4 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400">
+                <div className="w-10 h-10 mx-auto mb-4 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-500">
                   <MessageSquare size={18} strokeWidth={1.75} />
                 </div>
-                <h2 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-1">
+                <h2 className="text-base font-medium text-zinc-100 mb-1">
                   No room selected
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-zinc-400">
                   Choose a room from the list to start chatting.
                 </p>
               </div>

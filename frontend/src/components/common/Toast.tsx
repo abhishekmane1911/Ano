@@ -45,7 +45,7 @@ const ToastComponent = ({ toast, onClose }: ToastProps) => {
       case 'reputation':
         return '⭐';
       case 'moderation':
-        return '🛡';
+        return '🦌';
       default:
         return '';
     }

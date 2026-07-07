@@ -37,18 +37,18 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ onSelectChatroom, onOpenSea
 
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900 mobile:rounded-none md:rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="h-full flex flex-col bg-zinc-900 mobile:rounded-none md:rounded-lg border border-zinc-800 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3.5 mobile:px-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="px-4 py-3.5 mobile:px-3 border-b border-zinc-800 flex items-center justify-between">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">ChatRooms</h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{chatrooms.length} rooms</p>
+          <h2 className="text-sm font-semibold text-zinc-100">ChatRooms</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">{chatrooms.length} rooms</p>
         </div>
         <div className="flex gap-0.5 flex-shrink-0">
           {onOpenSearch && (
             <button
               onClick={onOpenSearch}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors tap-target"
+              className="p-1.5 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-300 transition-colors tap-target"
               title="Search"
             >
               <Search size={16} strokeWidth={1.75} />
@@ -56,7 +56,7 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ onSelectChatroom, onOpenSea
           )}
           <button
             onClick={loadChatrooms}
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors tap-target"
+            className="p-1.5 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-300 transition-colors tap-target"
             title="Refresh"
           >
             <RefreshCw size={16} strokeWidth={1.75} className={isRefreshing ? 'animate-spin' : ''} />
@@ -70,11 +70,11 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ onSelectChatroom, onOpenSea
         {loading ? (
           <div className="space-y-1 px-1">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse" />
+              <div key={i} className="h-16 bg-zinc-800 rounded-md animate-pulse" />
             ))}
           </div>
         ) : chatrooms.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-8">No rooms yet</p>
+          <p className="text-sm text-zinc-500 text-center py-8">No rooms yet</p>
         ) : (
           chatrooms.map(room => {
             const active = activeId === room.id;
@@ -83,13 +83,13 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ onSelectChatroom, onOpenSea
                 key={room.id}
                 onClick={() => onSelectChatroom(room.id)}
                 className={`w-full text-left relative px-3 py-2.5 rounded-md transition-colors tap-target border-l-2 ${active
-                  ? 'border-l-blue-600 bg-slate-50 dark:bg-slate-800/60'
-                  : 'border-l-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                  ? 'border-l-blue-500 bg-zinc-800/60'
+                  : 'border-l-transparent hover:bg-zinc-800/40'
                   }`}
               >
                 <div className="flex justify-between items-start gap-2 mb-0.5 w-full">
                   <h3
-                    className={`font-medium text-sm truncate text-left flex-1 ${active ? 'text-slate-900 dark:text-slate-100' : 'text-slate-700 dark:text-slate-300'
+                    className={`font-medium text-sm truncate text-left flex-1 ${active ? 'text-zinc-50' : 'text-zinc-300'
                       }`}
                   >
                     {room.name}
@@ -100,13 +100,6 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ onSelectChatroom, onOpenSea
                     </span>
                   )}
                 </div>
-                {/* <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-1 mb-1.5">
-                  {room.description}
-                </p> */}
-                {/* <div className="flex items-center text-[11px] text-slate-400 gap-1">
-                  <Users size={11} strokeWidth={1.75} />
-                  <span>{room.member_count}</span>
-                </div> */}
               </button>
             );
           })

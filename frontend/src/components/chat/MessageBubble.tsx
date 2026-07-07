@@ -63,7 +63,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     >
       {/* Avatar */}
       <div className={`w-7 h-7 flex-shrink-0 flex items-end ${!showAvatar ? 'opacity-0' : ''}`}>
-        <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[9px] text-slate-500 dark:text-slate-400 font-semibold select-none">
+        <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-[9px] text-zinc-400 font-semibold select-none">
           {message.sender_id.slice(0, 2).toUpperCase()}
         </div>
       </div>
@@ -71,17 +71,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* Bubble Container */}
       <div className={`flex flex-col gap-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
         {showAvatar && !isOwnMessage && (
-          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 ml-1">
+          <span className="text-[11px] font-medium text-zinc-500 ml-1">
             {message.sender_id.slice(0, 8)}
           </span>
         )}
 
         <div className={`relative px-3.5 py-2 text-[14px] leading-relaxed rounded-xl ${isOwnMessage
             ? 'bg-blue-600 text-white rounded-tr-sm'
-            : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-sm border border-slate-200 dark:border-slate-700'
+            : 'bg-zinc-800 text-zinc-100 rounded-tl-sm border border-zinc-700'
           }`}>
           {message.is_pinned && (
-            <div className="absolute -top-2 right-2 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+            <div className="absolute -top-2 right-2 bg-zinc-900 text-zinc-400 text-[9px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-zinc-700">
               <Pin size={8} /> Pinned
             </div>
           )}
@@ -112,7 +112,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   onClick={() => onMediaClick(message.media_url!, message.message_type as any)}
                 >
                   {message.message_type === 'image' ? (
-                    <img src={message.media_url} alt="Attachment" className="max-w-full h-auto max-h-[300px] object-cover bg-slate-100 dark:bg-slate-900" />
+                    <img src={message.media_url} alt="Attachment" className="max-w-full h-auto max-h-[300px] object-cover bg-zinc-900" />
                   ) : (
                     <video src={message.media_url} className="max-w-full h-auto max-h-[300px]" controls />
                   )}
@@ -121,7 +121,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </>
           )}
 
-          <div className={`flex items-center justify-end gap-1 mt-1 select-none ${isOwnMessage ? 'text-blue-100/80' : 'text-slate-400'}`}>
+          <div className={`flex items-center justify-end gap-1 mt-1 select-none ${isOwnMessage ? 'text-blue-100/80' : 'text-zinc-500'}`}>
             {message.is_edited && <span className="text-[9px] italic">edited</span>}
             <span className="text-[10px] tabular-nums">
               {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -135,16 +135,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div className="flex items-center gap-1.5 px-1">
             {upvotes > 0 && (
               <span className={`flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${userVote === 'upvote'
-                  ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20'
-                  : 'text-slate-400'
+                  ? 'text-emerald-400 bg-emerald-900/20'
+                  : 'text-zinc-500'
                 }`}>
                 <ThumbsUp size={10} /> {upvotes}
               </span>
             )}
             {downvotes > 0 && (
               <span className={`flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${userVote === 'downvote'
-                  ? 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-900/20'
-                  : 'text-slate-400'
+                  ? 'text-red-400 bg-red-900/20'
+                  : 'text-zinc-500'
                 }`}>
                 <ThumbsDown size={10} /> {downvotes}
               </span>
@@ -162,12 +162,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       {/* Hover Actions Menu */}
       <div className={`flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${isOwnMessage ? 'mr-1' : 'ml-1'}`}>
-        <div className="flex items-center bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 p-0.5">
+        <div className="flex items-center bg-zinc-800 rounded-full shadow-sm border border-zinc-700 p-0.5">
           {/* Emoji Trigger */}
           <div className="relative" ref={emojiPickerRef}>
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-full transition-colors"
             >
               <Smile size={15} />
             </button>
@@ -179,14 +179,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 6 }}
                   transition={{ duration: 0.12 }}
-                  className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 shadow-md rounded-lg border border-slate-200 dark:border-slate-700 p-2 z-50 w-48"
+                  className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-zinc-800 shadow-md rounded-lg border border-zinc-700 p-2 z-50 w-48"
                 >
                   <div className="grid grid-cols-4 gap-1">
                     {commonEmojis.map((emoji) => (
                       <button
                         key={emoji}
                         onClick={() => handleEmojiSelect(emoji)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-lg transition-colors text-center"
+                        className="p-1.5 hover:bg-zinc-700 rounded text-lg transition-colors text-center"
                       >
                         {emoji}
                       </button>
@@ -201,8 +201,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <button
             onClick={() => onVote(message.id, 'upvote')}
             className={`p-1.5 rounded-full transition-colors ${userVote === 'upvote'
-                ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
-                : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'bg-emerald-900/20 text-emerald-400'
+                : 'text-zinc-400 hover:text-emerald-500 hover:bg-zinc-700'
               }`}
             title="Upvote"
           >
@@ -211,8 +211,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <button
             onClick={() => onVote(message.id, 'downvote')}
             className={`p-1.5 rounded-full transition-colors ${userVote === 'downvote'
-                ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
-                : 'text-slate-400 hover:text-red-600 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'bg-red-900/20 text-red-400'
+                : 'text-zinc-400 hover:text-red-500 hover:bg-zinc-700'
               }`}
             title="Downvote"
           >
@@ -221,23 +221,23 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
           {isOwnMessage ? (
             <>
-              <button onClick={() => setIsEditing(true)} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+              <button onClick={() => setIsEditing(true)} className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-full transition-colors">
                 <Edit2 size={14} />
               </button>
-              <button onClick={() => onDelete(message.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+              <button onClick={() => onDelete(message.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-zinc-700 rounded-full transition-colors">
                 <Trash2 size={14} />
               </button>
             </>
           ) : (
             <div className="relative group/menu">
-              <button className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full">
+              <button className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-full">
                 <MoreHorizontal size={15} />
               </button>
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/menu:flex flex-col bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 min-w-[130px] z-50">
-                <button onClick={onReport} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap font-medium transition-colors">
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/menu:flex flex-col bg-zinc-800 shadow-md rounded-lg overflow-hidden border border-zinc-700 min-w-[130px] z-50">
+                <button onClick={onReport} className="flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 text-xs text-zinc-300 whitespace-nowrap font-medium transition-colors">
                   <Flag size={12} /> Report message
                 </button>
-                <button onClick={onBlock} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-red-600 whitespace-nowrap font-medium transition-colors">
+                <button onClick={onBlock} className="flex items-center gap-2 px-3 py-2.5 hover:bg-zinc-700 text-xs text-red-500 whitespace-nowrap font-medium transition-colors">
                   <Ban size={12} /> Block user
                 </button>
               </div>
@@ -247,8 +247,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <button
             onClick={() => onPin(message.id)}
             className={`p-1.5 rounded-full transition-colors ${message.is_pinned
-                ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'text-zinc-200 hover:bg-zinc-700'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
               }`}
             title={message.is_pinned ? 'Unpin message' : 'Pin message'}
           >
