@@ -98,6 +98,11 @@ class Message(models.Model):
         default=False,
         help_text='Whether the message is pinned'
     )
+    pin_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the pin should expire and automatically unpin'
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     search_vector = SearchVectorField(null=True, blank=True)

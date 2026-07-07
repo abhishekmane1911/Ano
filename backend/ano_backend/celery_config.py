@@ -24,6 +24,12 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=0),  # Daily at midnight
     },
     
+    # Chat System Tasks
+    'unpin-expired-messages': {
+        'task': 'chat.tasks.unpin_expired_messages',
+        'schedule': crontab(hour='*', minute=0),  # Every hour on the hour
+    },
+    
     # Moderation System Tasks
     'moderation-maintenance': {
         'task': 'moderation.tasks.schedule_moderation_maintenance',
@@ -111,6 +117,7 @@ CELERY_TASK_ROUTES = {
     'security.tasks.analyze_security_events': {'queue': 'medium_priority'},
     
     # Low priority tasks (maintenance and reports)
+    'chat.tasks.unpin_expired_messages': {'queue': 'low_priority'},
     'reputation.tasks.batch_tier_updates': {'queue': 'low_priority'},
     'reputation.tasks.cleanup_old_votes': {'queue': 'low_priority'},
     'moderation.tasks.cleanup_expired_shadowbans': {'queue': 'low_priority'},

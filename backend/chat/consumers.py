@@ -710,11 +710,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except ImportError:
             # Reputation app not available
             pass
+        try:
+            from reputation.models import UserReputation
+            if message.sender and message.sender.user:
+                rep = UserReputation.objects.get(user=message.sender.user)
+                sender_tier = rep.rank_tier
+            else:
+                sender_tier = 'Fresher'
+        except Exception:
+            sender_tier = 'Fresher'
         
         return {
             'id': str(message.id),
             'chatroom_id': str(message.chatroom.id) if message.chatroom else None,
             'sender_id': str(message.sender.anonymous_id),
+            'sender_tier': sender_tier,
             'content': message.content,
             'message_type': message.message_type,
             'media_url': media_url,

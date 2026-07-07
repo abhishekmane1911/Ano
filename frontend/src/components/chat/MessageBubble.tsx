@@ -1,8 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Pin, Flag, Ban, Smile, MoreHorizontal, Check, X, PinOff, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Smile, Edit2, Trash2, Check, X, ThumbsUp, ThumbsDown, MoreHorizontal, Flag, Ban, Pin } from 'lucide-react';
 import type { Message } from '../../stores/chatStore';
 import MessageReactions from './MessageReactions';
+
+const getTierColors = (tier?: string) => {
+  switch (tier) {
+    case 'Campus Legend': return 'border-amber-500/50 text-amber-400 bg-amber-500/10';
+    case 'Senior': return 'border-indigo-500/50 text-indigo-400 bg-indigo-500/10';
+    case 'Sophomore': return 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10';
+    case 'Fresher': 
+    default: 
+      return 'border-zinc-700 text-zinc-400 bg-zinc-800/80';
+  }
+};
 
 interface MessageBubbleProps {
   message: Message;
@@ -11,7 +22,7 @@ interface MessageBubbleProps {
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
   onReact: (id: string, emoji: string) => void;
-  onPin: (id: string) => void;
+  onPin: (id: string, isPinned: boolean) => void;
   onVote: (id: string, type: 'upvote' | 'downvote') => void;
   onReport: () => void;
   onBlock: () => void;
@@ -71,9 +82,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* Bubble Container */}
       <div className={`flex flex-col gap-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
         {showAvatar && !isOwnMessage && (
-          <span className="text-[11px] font-medium text-zinc-500 ml-1">
-            {message.sender_id.slice(0, 8)}
-          </span>
+          <div className="flex items-center gap-1.5 ml-1">
+            <span className="text-[11px] font-medium text-zinc-500">
+              {message.sender_id.slice(0, 8)}
+            </span>
+            {message.sender_tier && (
+              <span className={`text-[9px] font-semibold px-1.5 py-[1px] rounded ${getTierColors(message.sender_tier)} border`}>
+                {message.sender_tier}
+              </span>
+            )}
+          </div>
         )}
 
         <div className={`relative px-3.5 py-2 text-[14px] leading-relaxed rounded-xl ${isOwnMessage
@@ -245,14 +263,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           )}
 
           <button
-            onClick={() => onPin(message.id)}
+            onClick={() => onPin(message.id, message.is_pinned)}
             className={`p-1.5 rounded-full transition-colors ${message.is_pinned
                 ? 'text-zinc-200 hover:bg-zinc-700'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
               }`}
-            title={message.is_pinned ? 'Unpin message' : 'Pin message'}
+            title={message.is_pinned ? "Unpin message" : "Pin message"}
           >
-            {message.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
+            <Pin size={14} className={message.is_pinned ? "fill-current" : ""} />
           </button>
         </div>
       </div>

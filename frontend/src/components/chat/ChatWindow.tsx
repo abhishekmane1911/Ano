@@ -33,6 +33,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [pinModalMessageId, setPinModalMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,35 +59,54 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
     }
   }, [myReputation, setMyReputation]);
 
+  const [sortMode, setSortMode] = useState<'live' | 'top'>('live');
+
   useEffect(() => {
-    setHasMoreMessages(true);
-    loadMessages(1, true);
     resetUnreadCount(chatroomId);
     chatWebSocket.connect(chatroomId);
     return () => chatWebSocket.disconnect();
   }, [chatroomId]);
 
   useEffect(() => {
-    if (containerRef.current) {
+    setHasMoreMessages(true);
+    loadMessages(1, true, sortMode);
+  }, [chatroomId, sortMode]);
+
+  useEffect(() => {
+    if (containerRef.current && sortMode === 'live') {
       const { scrollHeight, scrollTop, clientHeight } = containerRef.current;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
       if (isNearBottom) scrollToBottom();
     }
-  }, [messages[chatroomId]]);
+  }, [messages[chatroomId], sortMode]);
 
-  const loadMessages = async (page: number, isInitial = false) => {
+  const loadMessages = async (page: number, isInitial = false, currentSortMode: 'live' | 'top') => {
     try {
       setLoadingMore(true);
-      const res = await chatApi.getChatroomMessages(chatroomId, page);
+      const ordering = currentSortMode === 'top' ? 'wilson_score' : 'created_at';
+      const res = await chatApi.getChatroomMessages(chatroomId, page, 50, ordering);
       setHasMoreMessages(res.next !== null);
 
+      const messagesToSet = currentSortMode === 'live' ? res.results.reverse() : res.results;
+
       if (isInitial) {
-        setMessages(chatroomId, res.results.reverse());
-        setTimeout(scrollToBottom, 100);
+        setMessages(chatroomId, messagesToSet);
+        if (currentSortMode === 'live') {
+          setTimeout(scrollToBottom, 100);
+        } else {
+          setTimeout(() => {
+            if (containerRef.current) containerRef.current.scrollTop = 0;
+          }, 100);
+        }
       } else {
-        prependMessages(chatroomId, res.results.reverse());
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight - prevHeightRef.current;
+        if (currentSortMode === 'live') {
+          prependMessages(chatroomId, messagesToSet);
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight - prevHeightRef.current;
+          }
+        } else {
+          const existing = useChatStore.getState().messages[chatroomId] || [];
+          setMessages(chatroomId, [...existing, ...messagesToSet]);
         }
       }
     } catch (err) {
@@ -99,22 +119,46 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current || loadingMore || !hasMoreMessages) return;
-    if (containerRef.current.scrollTop < 100) {
-      prevHeightRef.current = containerRef.current.scrollHeight;
-      const currentCount = messages[chatroomId]?.length || 0;
-      loadMessages(Math.ceil(currentCount / 50) + 1);
+    
+    if (sortMode === 'live') {
+      if (containerRef.current.scrollTop < 100) {
+        prevHeightRef.current = containerRef.current.scrollHeight;
+        const currentCount = messages[chatroomId]?.length || 0;
+        loadMessages(Math.ceil(currentCount / 50) + 1, false, sortMode);
+      }
+    } else {
+      const { scrollHeight, scrollTop, clientHeight } = containerRef.current;
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        const currentCount = messages[chatroomId]?.length || 0;
+        loadMessages(Math.ceil(currentCount / 50) + 1, false, sortMode);
+      }
     }
-  }, [loadingMore, hasMoreMessages, chatroomId, messages]);
+  }, [loadingMore, hasMoreMessages, chatroomId, messages, sortMode]);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   const chatroomMessages = messages[chatroomId] || [];
 
-  const handlePinMessage = async (messageId: string) => {
+  const handlePinMessage = async (messageId: string, isPinned: boolean) => {
+    if (isPinned) {
+      try {
+        const updatedMessage = await chatApi.pinMessage(messageId);
+        updateMessage(chatroomId, updatedMessage);
+      } catch (error) {
+        console.error('Failed to unpin message:', error);
+      }
+    } else {
+      setPinModalMessageId(messageId);
+    }
+  };
+
+  const submitPin = async (durationHours: number) => {
+    if (!pinModalMessageId) return;
     try {
-      const updatedMessage = await chatApi.pinMessage(messageId);
+      const updatedMessage = await chatApi.pinMessage(pinModalMessageId, durationHours);
       updateMessage(chatroomId, updatedMessage);
+      setPinModalMessageId(null);
     } catch (error) {
-      console.error('Failed to pin/unpin message:', error);
+      console.error('Failed to pin message:', error);
     }
   };
 
@@ -171,13 +215,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
               <ArrowLeft size={18} strokeWidth={1.75} />
             </button>
           )}
-          <div className="min-w-0">
-            <h2 className="font-semibold text-sm text-zinc-100 truncate">
-              {currentChatroom?.name}
-            </h2>
-            <p className="text-xs text-zinc-500 truncate">
-              {currentChatroom?.description || 'Welcome to the chat room'}
-            </p>
+          <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div>
+              <h2 className="font-semibold text-sm text-zinc-100 truncate">
+                {currentChatroom?.name}
+              </h2>
+              <p className="text-xs text-zinc-500 truncate hidden sm:block">
+                {currentChatroom?.description || 'Welcome to the chat room'}
+              </p>
+            </div>
+            
+            <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-lg p-0.5">
+              <button
+                onClick={() => setSortMode('live')}
+                className={`px-3 py-1 text-[11px] font-medium rounded-md transition-colors ${sortMode === 'live' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                Live
+              </button>
+              <button
+                onClick={() => setSortMode('top')}
+                className={`px-3 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ${sortMode === 'top' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                Top <span className="text-[10px] text-amber-500">★</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -299,6 +360,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
         newLevel={rankUpEvent?.newLevel ?? 1}
         onComplete={clearRankUpEvent}
       />
+      {/* Pin Duration Modal */}
+      {pinModalMessageId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-sm w-full p-5 space-y-4">
+            <h3 className="text-lg font-medium text-zinc-100">Pin Duration</h3>
+            <p className="text-sm text-zinc-400">
+              How long should this message be pinned in the chat?
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => submitPin(1)} className="p-3 text-left bg-zinc-950 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-colors">
+                1 Hour
+              </button>
+              <button onClick={() => submitPin(24)} className="p-3 text-left bg-zinc-950 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-colors">
+                1 Day
+              </button>
+              <button onClick={() => submitPin(168)} className="p-3 text-left bg-zinc-950 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-colors">
+                1 Week
+              </button>
+              <button onClick={() => submitPin(720)} className="p-3 text-left bg-zinc-950 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-colors">
+                1 Month
+              </button>
+            </div>
+            <button
+              onClick={() => setPinModalMessageId(null)}
+              className="w-full p-2.5 mt-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

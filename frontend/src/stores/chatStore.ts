@@ -4,6 +4,7 @@ export interface Message {
   id: string;
   chatroom_id: string | null;
   sender_id: string;
+  sender_tier?: string;
   content: string;
   message_type: 'text' | 'image' | 'voice' | 'system';
   media_url: string;

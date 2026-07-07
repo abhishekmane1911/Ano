@@ -45,6 +45,7 @@ class MessageSerializer(serializers.ModelSerializer):
     """Serializer for Message model"""
     
     sender_id = serializers.UUIDField(source='sender.anonymous_id', read_only=True)
+    sender_tier = serializers.SerializerMethodField()
     reactions = MessageReactionSerializer(many=True, read_only=True)
     reaction_count = serializers.SerializerMethodField()
     media_url = serializers.SerializerMethodField()
@@ -56,6 +57,7 @@ class MessageSerializer(serializers.ModelSerializer):
             'id',
             'chatroom',
             'sender_id',
+            'sender_tier',
             'content',
             'message_type',
             'media_url',
@@ -87,6 +89,18 @@ class MessageSerializer(serializers.ModelSerializer):
             emoji = reaction.emoji
             reactions[emoji] = reactions.get(emoji, 0) + 1
         return reactions
+        
+    def get_sender_tier(self, obj):
+        """Get the sender's reputation tier"""
+        try:
+            from reputation.models import UserReputation
+            # sender is an AnonymousProfile, sender.user is the User
+            if obj.sender and obj.sender.user:
+                reputation = UserReputation.objects.get(user=obj.sender.user)
+                return reputation.rank_tier
+        except Exception:
+            pass
+        return 'Fresher'
     
     def get_media_url(self, obj):
         """Convert relative media URL to absolute URL"""

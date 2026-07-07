@@ -18,12 +18,13 @@ export const chatApi = {
   getChatroomMessages: async (
     chatroomId: string,
     page: number = 1,
-    pageSize: number = 50
+    pageSize: number = 50,
+    ordering: string = 'created_at'
   ): Promise<{ results: Message[]; count: number; next: string | null; previous: string | null }> => {
     const response = await axiosInstance.get(
       `${API_BASE}/chatrooms/${chatroomId}/messages/`,
       {
-        params: { page, page_size: pageSize },
+        params: { page, page_size: pageSize, ordering },
       }
     );
     return response.data;
@@ -64,8 +65,10 @@ export const chatApi = {
     });
   },
 
-  pinMessage: async (messageId: string): Promise<Message> => {
-    const response = await axiosInstance.post(`${API_BASE}/messages/${messageId}/pin/`);
+  pinMessage: async (messageId: string, duration_hours?: number): Promise<Message> => {
+    const response = await axiosInstance.post(`${API_BASE}/messages/${messageId}/pin/`, {
+      duration_hours,
+    });
     return response.data;
   },
 

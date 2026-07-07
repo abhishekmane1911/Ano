@@ -75,10 +75,10 @@ const Navigation = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <div className="px-6 py-3">
+      <div className="px-6 py-3 ">
         <nav className="flex items-center justify-between">
 
-          {/* Logo Section */}
+
           <Link
             to={isAuthenticated ? '/' : '/landing'}
             onClick={() => setIsMobileMenuOpen(false)}
@@ -90,13 +90,13 @@ const Navigation = () => {
               className="flex items-center gap-2"
             >
 
-              <h2 className="text-xl font-bold text-zinc-50 tracking-tight">
+              <h2 className="text-xl font-bold text-zinc-50 tracking-tight ">
                 Ano
               </h2>
             </motion.div>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-2">
             <div className="flex items-center px-1.5 py-1.5 rounded-full mr-4">
               {navLinks.map((link) => (

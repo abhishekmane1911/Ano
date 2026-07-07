@@ -393,8 +393,29 @@ class MessageViewSet(viewsets.ViewSet):
         """Pin or unpin a message"""
         message = get_object_or_404(Message, pk=pk)
         
-        # Toggle pin status
-        message.is_pinned = not message.is_pinned
+        # If currently pinned, just unpin it
+        if message.is_pinned:
+            message.is_pinned = False
+            message.pin_expires_at = None
+        else:
+            # Pin the message with duration
+            message.is_pinned = True
+            duration_hours = request.data.get('duration_hours')
+            
+            if duration_hours:
+                from django.utils import timezone
+                from datetime import timedelta
+                try:
+                    hours = int(duration_hours)
+                    if hours > 0:
+                        message.pin_expires_at = timezone.now() + timedelta(hours=hours)
+                    else:
+                        message.pin_expires_at = None
+                except ValueError:
+                    message.pin_expires_at = None
+            else:
+                message.pin_expires_at = None
+                
         message.save()
         
         serializer = MessageSerializer(message)
