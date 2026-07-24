@@ -80,7 +80,7 @@ INSTALLED_APPS = [
     "matchmaking",
     "reports",
     "admin_dashboard",
-    # Advanced gamification modules
+    
     "reputation",
     "moderation",
     "security",
@@ -178,11 +178,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# REST Framework
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -190,6 +189,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',   
+        'user': '1000/day', 
+        'chatroom_media_upload': '10/min', 
+    }
 }
 
 # JWT Settings
@@ -255,7 +263,7 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 
-# Password Hashing
+
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
@@ -263,7 +271,7 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
 ]
 
-# Authentication Backends
+# auth Backends
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    
 ]
@@ -282,8 +290,8 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Cookie Security
-SESSION_COOKIE_SECURE = not DEBUG  # HTTPS only in production
-CSRF_COOKIE_SECURE = not DEBUG     # HTTPS only in production
+SESSION_COOKIE_SECURE = not DEBUG  
+CSRF_COOKIE_SECURE = not DEBUG     
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -291,36 +299,25 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # Database Connection Pooling (for production)
 if not DEBUG:
-    DATABASES["default"]["CONN_MAX_AGE"] = 600  # 10 minutes
+    DATABASES["default"]["CONN_MAX_AGE"] = 600 
     DATABASES["default"]["OPTIONS"] = {
         "connect_timeout": 10,
-        "options": "-c statement_timeout=30000",  # 30 seconds
+        "options": "-c statement_timeout=30000", 
     }
-SESSION_COOKIE_HTTPONLY = True     # Prevent JavaScript access
-CSRF_COOKIE_HTTPONLY = True        # Prevent JavaScript access
-SESSION_COOKIE_SAMESITE = 'Lax'    # CSRF protection
-CSRF_COOKIE_SAMESITE = 'Lax'       # CSRF protection
 
-# HTTPS/SSL Settings (for production)
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # File Upload Settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  
 FILE_UPLOAD_PERMISSIONS = 0o644
+MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 # Additional Security Headers
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Custom User Model
 AUTH_USER_MODEL = 'authentication.User'
 
-# Frontend URL for email verification links
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # Advanced Gamification Modules Configuration
@@ -354,7 +351,7 @@ MODERATION_SETTINGS = {
 # Security System Settings
 SECURITY_SETTINGS = {
     'RATE_LIMITS': {
-        'post_creation': (5, 600),  # 5 posts per 10 minutes
+        'post_creation': (5, 600),  # 5 posts per 10 min
         'comment_creation': (20, 600),  # 20 comments per 10 minutes
         'vote_casting': (100, 3600),  # 100 votes per hour
         'login_attempt': (5, 300),  # 5 login attempts per 5 minutes
@@ -369,7 +366,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1",
-        'TIMEOUT': 300,  # 5 minutes default timeout
+        'TIMEOUT': 300,  
         'KEY_PREFIX': 'ano_platform',
     }
 }

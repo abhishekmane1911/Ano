@@ -28,7 +28,6 @@ def validate_request_data(required_fields=None, optional_fields=None, field_vali
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            # Get request data
             if hasattr(request, 'data'):
                 data = request.data
             else:
@@ -36,7 +35,6 @@ def validate_request_data(required_fields=None, optional_fields=None, field_vali
             
             errors = {}
             
-            # Check required fields
             if required_fields:
                 for field in required_fields:
                     if field not in data or data[field] in [None, '', []]:
@@ -106,7 +104,6 @@ def validate_password(password):
     if len(password) > 128:
         raise ValueError('Password is too long')
     
-    # Check for at least one letter and one number
     if not re.search(r'[a-zA-Z]', password):
         raise ValueError('Password must contain at least one letter')
     

@@ -182,7 +182,6 @@ def login_view(request):
         
         response_data = {
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
             'user': user_data
         }
         
@@ -281,7 +280,6 @@ def refresh_token_view(request):
         
         response_data = {
             'access': access_token,
-            'refresh': new_refresh_token
         }
         
         response = Response(response_data, status=status.HTTP_200_OK)

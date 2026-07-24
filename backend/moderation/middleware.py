@@ -34,26 +34,22 @@ class AIModerationMiddleware(MiddlewareMixin):
         Intercept requests to moderated endpoints and check content.
         For synchronous moderation of critical content.
         """
-        # Only process POST requests to moderated endpoints
+    
         if request.method != 'POST':
             return None
         
-        # Skip authentication endpoints
         if '/auth/' in request.path:
             return None
         
-        # Skip profile endpoints
         if '/profiles/' in request.path:
             return None
         
-        # Skip admin endpoints
         if request.path.startswith('/admin/'):
             return None
             
         if not any(request.path.startswith(endpoint) for endpoint in self.MODERATED_ENDPOINTS):
             return None
-        
-        # Skip if user is not authenticated
+
         if not request.user.is_authenticated:
             return None
         
@@ -88,11 +84,11 @@ class AIModerationMiddleware(MiddlewareMixin):
                 }, status=400)
         
         except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
-            # If we can't parse the request, let it continue
+            
             pass
         except Exception as e:
             logger.error(f"Error in AI moderation middleware: {e}")
-            # Don't block requests if moderation fails
+            
         
         return None
     
@@ -100,7 +96,6 @@ class AIModerationMiddleware(MiddlewareMixin):
         """
         Process response to trigger asynchronous moderation for approved content.
         """
-        # Only process successful POST responses to moderated endpoints
         if (request.method == 'POST' and 
             response.status_code in [200, 201] and
             any(request.path.startswith(endpoint) for endpoint in self.MODERATED_ENDPOINTS)):
@@ -132,9 +127,8 @@ class AIModerationMiddleware(MiddlewareMixin):
         """
         # Simple keyword-based check for immediate rejection
         high_toxicity_keywords = [
-            'kill yourself', 'kys', 'suicide', 'die', 'murder',
-            'rape', 'assault', 'violence', 'harm', 'hurt',
-            # Add more keywords as needed
+            'kill yourself', 'kys', 'murder',
+            'rape', 'assault', 'violence',
         ]
         
         content_lower = content.lower()
@@ -143,30 +137,24 @@ class AIModerationMiddleware(MiddlewareMixin):
                 return 0.9  # High toxicity score
         
         # Check for excessive profanity or caps
-        if self._has_excessive_profanity(content) or self._is_excessive_caps(content):
+        if self._has_excessive_profanity(content) :
             return 0.7
         
-        return 0.1  # Default low toxicity
+        return 0.1 
     
     def _has_excessive_profanity(self, content: str) -> bool:
         """Check for excessive profanity in content."""
         # Simple profanity check - can be enhanced with better-profanity library
-        profanity_words = ['fuck', 'shit', 'damn', 'bitch', 'asshole']  # Basic list
+        profanity_words = ['fuck', 'shit', 'bitch', 'asshole',] 
         content_lower = content.lower()
         profanity_count = sum(1 for word in profanity_words if word in content_lower)
-        return profanity_count > 2  # More than 2 profane words
+        return profanity_count > 2  
     
-    def _is_excessive_caps(self, content: str) -> bool:
-        """Check if content has excessive capital letters."""
-        if len(content) < 10:
-            return False
-        caps_ratio = sum(1 for c in content if c.isupper()) / len(content)
-        return caps_ratio > 0.7  # More than 70% caps
     
     def _apply_immediate_penalties(self, user: User, toxicity_score: float, content: str):
         """Apply immediate penalties for high toxicity content."""
         try:
-            # Create violation record
+           
             from .models import ViolationHistory
             ViolationHistory.objects.create(
                 user=user,
@@ -176,7 +164,7 @@ class AIModerationMiddleware(MiddlewareMixin):
                 action_taken='immediate_rejection'
             )
             
-            # Apply shadowban
+            #  shadowban
             ModerationService._apply_shadowban(
                 user, 
                 24, 

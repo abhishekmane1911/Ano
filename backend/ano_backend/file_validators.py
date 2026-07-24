@@ -119,30 +119,30 @@ def validate_image_file(file):
     Raises:
         ValidationError: If validation fails
     """
-    # Validate file size first (before processing)
+    # size
     validate_file_size(file, MAX_IMAGE_SIZE)
     
-    # Get all allowed extensions
+    # extensions
     allowed_extensions = []
     for extensions in ALLOWED_IMAGE_TYPES.values():
         allowed_extensions.extend(extensions)
     
-    # Validate extension
+    # val extension
     validate_file_extension(file.name, allowed_extensions)
     
-    # Validate MIME type (checks actual file content)
+    # Validate MIME type
     validate_file_mime_type(file, ALLOWED_IMAGE_TYPES)
     
-    # Additional image-specific validation using Pillow
+    #  image specific val using Pillow
     try:
         from PIL import Image
         
         file.seek(0)
         img = Image.open(file)
-        img.verify()  # Verify it's a valid image
+        img.verify() 
         file.seek(0)
         
-        # Check image dimensions (prevent extremely large images)
+        # Check img dimn
         img = Image.open(file)
         width, height = img.size
         max_dimension = 4096
@@ -152,14 +152,14 @@ def validate_image_file(file):
                 f'Image dimensions too large. Maximum: {max_dimension}x{max_dimension}px'
             )
         
-        # Check for minimum dimensions (prevent 1x1 pixel attacks)
+        # Chck for min dimn 
         min_dimension = 10
         if width < min_dimension or height < min_dimension:
             raise ValidationError(
                 f'Image dimensions too small. Minimum: {min_dimension}x{min_dimension}px'
             )
         
-        # Check aspect ratio (prevent extremely wide/tall images)
+        # Check aspect ratio 
         aspect_ratio = max(width, height) / min(width, height)
         if aspect_ratio > 10:
             raise ValidationError(
@@ -184,7 +184,6 @@ def validate_audio_file(file):
     Raises:
         ValidationError: If validation fails
     """
-    # Validate file size
     validate_file_size(file, MAX_AUDIO_SIZE)
     
     # Get all allowed extensions
@@ -217,12 +216,11 @@ def scan_file_for_malware(file):
     content = file.read(1024)  # Read first 1KB
     file.seek(0)
     
-    # Check for common malware signatures (very basic)
     suspicious_patterns = [
-        b'<?php',  # PHP code
-        b'<script',  # JavaScript
-        b'eval(',  # Eval functions
-        b'exec(',  # Exec functions
+        b'<?php',  
+        b'<script',  
+        b'eval(',  
+        b'exec(',
     ]
     
     for pattern in suspicious_patterns:

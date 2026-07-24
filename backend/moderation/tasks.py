@@ -16,7 +16,6 @@ def moderate_message_async(self, message_id):
         message = Message.objects.get(id=message_id)
         result = ModerationService.moderate_content(message)
         
-        # If message was rejected, mark it as deleted
         if result.action_taken == 'rejected':
             message.is_deleted = True
             message.save()
@@ -73,8 +72,16 @@ def update_user_heat_scores(self):
             created_at__lt=timezone.now() - timedelta(days=30)
         )
         
+        # Get affected user IDs before updating so we can clear their cache
+        affected_user_ids = set(old_violations.values_list('user_id', flat=True))
+        
         count = old_violations.count()
-        old_violations.update(is_active=False)
+        if count > 0:
+            old_violations.update(is_active=False)
+            
+            from django.core.cache import cache
+            for user_id in affected_user_ids:
+                cache.delete(f"user_heat_level_{user_id}")
         
         # Process rehabilitation for eligible users
         rehabilitation_count = 0
@@ -113,7 +120,7 @@ def process_moderation_queue(self):
         # Find messages that need re-moderation (failed previous attempts)
         recent_failed = ModerationResult.objects.filter(
             action_taken='approved',
-            toxicity_score=0.0,  # Likely failed moderation
+            toxicity_score=0.0,  
             processed_at__gte=timezone.now() - timedelta(hours=1)
         )
         
@@ -146,7 +153,7 @@ def generate_heat_report(self):
         
         User = get_user_model()
         
-        # Get statistics
+        # Get stats
         total_users = User.objects.count()
         users_with_violations = User.objects.filter(
             violations__is_active=True

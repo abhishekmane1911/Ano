@@ -23,11 +23,10 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     verification_token = models.UUIDField(default=uuid.uuid4, editable=False)
     
-    # Password reset fields
+    
     password_reset_token = models.UUIDField(null=True, blank=True)
     password_reset_token_created = models.DateTimeField(null=True, blank=True)
     
-    # Make email the username field
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     

@@ -6,12 +6,10 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Profile(models.Model):
     """Anonymous profile for users with UUID-based public identifier"""
-    
-    
-    
+  
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
+        settings.AUTH_USER_MODEL, # its better than user = models.OneToOneField(User, ...) duw to we can change just the user model is settings.py and the auto points to it 
         on_delete=models.CASCADE,
         related_name='profile'
     )
@@ -19,11 +17,11 @@ class Profile(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        db_index=True,
+        # db_index=True,
         help_text='Public anonymous identifier for this profile'
     )
     
-    # Profile fields
+    
     bio = models.TextField(
         blank=True,
         max_length=500,

@@ -5,7 +5,7 @@ from ano_backend.file_validators import validate_uploaded_file
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    """Serializer for Profile model - ensures no personal information is exposed"""
+    """Serializer for Profile model to ensures no personal information is exposed"""
     
     avatar = serializers.SerializerMethodField()
     
@@ -22,7 +22,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'anonymous_id', 'created_at', 'updated_at']
     
     def get_avatar(self, obj):
-        """Return absolute URL for avatar"""
+        """Return absolute URL for avtr"""
         if obj.avatar:
             request = self.context.get('request')
             if request:
@@ -32,7 +32,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     
     def validate_avatar(self, value):
-        """Validate uploaded avatar file"""
+        """val uploaded avtr file"""
         if value:
             try:
                 validate_uploaded_file(value, file_type='image')

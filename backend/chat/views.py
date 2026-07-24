@@ -11,6 +11,7 @@ from PIL import Image
 import io
 import os
 from django.conf import settings
+from rest_framework.throttling import ScopedRateThrottle
 
 # Import privilege enforcement decorators
 from reputation.services import require_privilege_drf
@@ -47,6 +48,8 @@ class ChatroomViewSet(viewsets.ModelViewSet):
     queryset = Chatroom.objects.filter(is_active=True)
     serializer_class = ChatroomSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = None
     
     def list(self, request):
         """List all active chatrooms"""
@@ -104,7 +107,6 @@ class ChatroomViewSet(viewsets.ModelViewSet):
             except ImportError:
                 messages = messages.order_by('-created_at')
         else:
-            # Default: order by creation time (newest first for pagination, frontend will reverse)
             messages = messages.order_by('-created_at')
         
         paginator = MessagePagination()
@@ -122,7 +124,7 @@ class ChatroomViewSet(viewsets.ModelViewSet):
         """Send a message to a chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         
-        # Get user's profile
+       
         try:
             profile = request.user.profile
         except:
@@ -145,12 +147,11 @@ class ChatroomViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @require_privilege_drf('upload_images')
-    @action(detail=True, methods=['post'], url_path='upload_media')
+    @action(detail=True, methods=['post'], url_path='upload_media', throttle_scope='chatroom_media_upload')
     def upload_media(self, request, pk=None):
         """Upload media file for chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         
-        # Get user's profile
         try:
             profile = request.user.profile
         except:
@@ -160,15 +161,17 @@ class ChatroomViewSet(viewsets.ModelViewSet):
             )
         
         # Rate limiting for file uploads (max 10 uploads per hour per user)
-        from django.core.cache import cache
-        cache_key = f'file_upload_rate_limit_{request.user.id}'
-        upload_count = cache.get(cache_key, 0)
+        # from django.core.cache import cache
+        # cache_key = f'file_upload_rate_limit_{request.user.id}'
+        # upload_count = cache.get(cache_key, 0)
         
-        if upload_count >= 10:
-            return Response(
-                {'error': 'Upload rate limit exceeded. Please try again later.'},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
+        # if upload_count >= 10:
+        #     return Response(
+        #         {'error': 'Upload rate limit exceeded. Please try again later.'},
+        #         status=status.HTTP_429_TOO_MANY_REQUESTS
+        #     )
+
+
         
         if 'file' not in request.FILES:
             return Response(
@@ -178,7 +181,7 @@ class ChatroomViewSet(viewsets.ModelViewSet):
         
         file = request.FILES['file']
         
-        # File validation
+        # file val
         from ano_backend.file_validators import validate_uploaded_file
         from django.core.exceptions import ValidationError as DjangoValidationError
         
@@ -190,7 +193,7 @@ class ChatroomViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Compress and save image
+        # compress and save img
         try:
             from PIL import Image
             import io
@@ -198,22 +201,20 @@ class ChatroomViewSet(viewsets.ModelViewSet):
             import uuid
             import re
             
-            # Sanitize filename - remove path separators and dangerous characters
+            # sanitize filename , remove path separators and dangerous chars
             safe_name = re.sub(r'[^\w\-_\.]', '_', file.name)
-            safe_name = safe_name[:100]  # Limit length
+            safe_name = safe_name[:100]  
             if not safe_name:
                 safe_name = 'image.jpg'
             
             img = Image.open(file)
             
-            # Verify it's actually an image and not malicious content
             img.verify()
             
-            # Reopen for processing (verify() closes the image)
+            # Reopen for processing (verify() closes img)
             file.seek(0)
             img = Image.open(file)
             
-            # Convert RGBA to RGB if necessary
             if img.mode in ('RGBA', 'LA', 'P'):
                 background = Image.new('RGB', img.size, (255, 255, 255))
                 if img.mode == 'P':
@@ -221,10 +222,8 @@ class ChatroomViewSet(viewsets.ModelViewSet):
                 background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                 img = background
             
-            # Resize if larger than max_size
             img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
             
-            # Save to bytes
             output = io.BytesIO()
             img.save(output, format='JPEG', quality=85, optimize=True)
             
@@ -255,29 +254,27 @@ class ChatroomViewSet(viewsets.ModelViewSet):
                 file_name = f"{uuid.uuid4().hex}_{new_name}"
                 file_path = os.path.join(media_path, file_name)
                 counter += 1
-                if counter > 100:  # Prevent infinite loop
+                if counter > 100:  
                     break
             
-            # Write file atomically
+
             temp_path = f"{file_path}.tmp"
             try:
                 with open(temp_path, 'wb') as f:
                     f.write(output.getvalue())
                 os.rename(temp_path, file_path)
             except Exception as e:
-                # Clean up temp file if it exists
                 if os.path.exists(temp_path):
                     os.unlink(temp_path)
                 raise e
             
-            # Return absolute media URL
-            # Build absolute URL for the media file
+
             request_scheme = 'https' if request.is_secure() else 'http'
             request_host = request.get_host()
             media_url = f"{request_scheme}://{request_host}{settings.MEDIA_URL}chat_media/{file_name}"
             
             # Increment upload counter for rate limiting
-            cache.set(cache_key, upload_count + 1, 3600)  # 1 hour timeout
+            # cache.set(cache_key, upload_count + 1, 3600) 
             
             return Response({'media_url': media_url}, status=status.HTTP_201_CREATED)
             
@@ -331,7 +328,7 @@ class MessageViewSet(viewsets.ViewSet):
         """Delete a message (soft delete)"""
         message = get_object_or_404(Message, pk=pk)
         
-        # Get user's profile
+        
         try:
             profile = request.user.profile
         except:
@@ -361,7 +358,7 @@ class MessageViewSet(viewsets.ViewSet):
         """Add a reaction to a message"""
         message = get_object_or_404(Message, pk=pk)
         
-        # Get user's profile
+        
         try:
             profile = request.user.profile
         except:
@@ -477,7 +474,6 @@ class MessageViewSet(viewsets.ViewSet):
                 # Resize for mobile
                 img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
                 
-                # Save to bytes
                 output = io.BytesIO()
                 img.save(output, format='JPEG', quality=quality, optimize=True)
                 output.seek(0)
@@ -514,7 +510,6 @@ def search_messages(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Get user's profile
     try:
         profile = request.user.profile
     except:
@@ -609,7 +604,6 @@ class PollViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # Get user's profile
         try:
             profile = request.user.profile
         except:
@@ -639,7 +633,6 @@ class PollViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get user's profile
         try:
             profile = request.user.profile
         except:
@@ -714,7 +707,6 @@ class ConfessionViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # Get user's profile
         try:
             profile = request.user.profile
         except:
