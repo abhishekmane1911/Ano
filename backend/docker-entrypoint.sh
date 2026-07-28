@@ -28,7 +28,6 @@ else:
     print('Superuser already exists')
 EOF
 
-# Start the appropriate server based on SERVER_TYPE
 if [ "$SERVER_TYPE" = "asgi" ]; then
     echo "Starting Daphne (ASGI) server..."
     exec daphne -b 0.0.0.0 -p 8001 ano_backend.asgi:application

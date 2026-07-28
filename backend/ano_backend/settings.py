@@ -57,7 +57,6 @@ if not DEBUG:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",

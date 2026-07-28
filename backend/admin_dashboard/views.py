@@ -27,7 +27,7 @@ from .serializers import (
 )
 from ano_backend.logging_config import get_anonymous_id_from_user
 
-# Get loggers
+
 logger = logging.getLogger('ano_platform')
 security_logger = logging.getLogger('ano_platform.security')
 
@@ -49,26 +49,21 @@ def list_reports(request):
     - status: Filter by status (pending, reviewed, resolved)
     - ordering: Order by field (created_at, -created_at)
     """
-    # Get query parameters
     status_filter = request.query_params.get('status', None)
     ordering = request.query_params.get('ordering', '-created_at')
     
-    # Build queryset
     queryset = Report.objects.select_related(
         'reporter',
         'reported',
         'reviewed_by'
     ).all()
     
-    # Apply filters
     if status_filter:
         queryset = queryset.filter(status=status_filter)
     
-    # Apply ordering
     if ordering:
         queryset = queryset.order_by(ordering)
     
-    # Paginate
     paginator = AdminPagination()
     page = paginator.paginate_queryset(queryset, request)
     
@@ -108,7 +103,6 @@ def update_report(request, report_id):
         old_status = report.status
         serializer.save()
         
-        # Log report status update with anonymous IDs
         admin_id = get_anonymous_id_from_user(request.user)
         security_logger.info(
             f"Report updated by admin {admin_id or f'user_{request.user.id}'} - "
@@ -117,7 +111,6 @@ def update_report(request, report_id):
             f"Status: {old_status} -> {report.status}"
         )
         
-        # Return full report data
         response_serializer = AdminReportSerializer(report)
         return Response(response_serializer.data)
     
@@ -140,7 +133,6 @@ def get_user_detail(request, anonymous_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    # Annotate with statistics
     profile.reports_received_count = Report.objects.filter(reported=profile).count()
     profile.reports_made_count = Report.objects.filter(reporter=profile).count()
     profile.messages_sent_count = Message.objects.filter(sender=profile).count()
@@ -173,12 +165,10 @@ def ban_user(request, anonymous_id):
     serializer = AdminUserBanSerializer(data=request.data)
     
     if serializer.is_valid():
-        # Deactivate the user account
         user = profile.user
         user.is_active = False
         user.save()
         
-        # Log ban action with anonymous IDs
         admin_id = get_anonymous_id_from_user(request.user)
         reason = serializer.validated_data.get('reason', 'No reason provided')
         security_logger.error(
@@ -212,7 +202,6 @@ def broadcast_message(request):
         content = serializer.validated_data['content']
         chatroom_id = serializer.validated_data.get('chatroom_id')
         
-        # Get admin profile (create if doesn't exist)
         admin_profile, created = Profile.objects.get_or_create(
             user=request.user,
             defaults={
@@ -224,7 +213,6 @@ def broadcast_message(request):
             }
         )
         
-        # Determine target chatrooms
         if chatroom_id:
             chatrooms = Chatroom.objects.filter(id=chatroom_id, is_active=True)
             if not chatrooms.exists():
@@ -235,7 +223,6 @@ def broadcast_message(request):
         else:
             chatrooms = Chatroom.objects.filter(is_active=True)
         
-        # Create broadcast messages
         messages_created = []
         for chatroom in chatrooms:
             message = Message.objects.create(
@@ -272,9 +259,7 @@ def get_platform_metrics(request):
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = now - timedelta(days=7)
     
-    # Calculate metrics
     metrics = {
-        # User metrics
         'active_users_today': User.objects.filter(
             last_login__gte=today_start,
             is_active=True
@@ -286,7 +271,6 @@ def get_platform_metrics(request):
         'total_users': User.objects.filter(is_active=True).count(),
         'total_profiles': Profile.objects.count(),
         
-        # Message metrics
         'total_messages_today': Message.objects.filter(
             created_at__gte=today_start,
             is_deleted=False
@@ -296,15 +280,13 @@ def get_platform_metrics(request):
             is_deleted=False
         ).count(),
         'total_messages': Message.objects.filter(is_deleted=False).count(),
-        
-        # Match metrics
+
         'total_matches': Match.objects.filter(is_active=True).count(),
         
-        # Report metrics
         'total_reports_pending': Report.objects.filter(status='pending').count(),
         'total_reports': Report.objects.count(),
         
-        # Chatroom metrics
+    
         'total_chatrooms': Chatroom.objects.filter(is_active=True).count(),
     }
     

@@ -235,15 +235,12 @@ class ChatroomViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Save to media directory
             media_path = os.path.join(settings.MEDIA_ROOT, 'chat_media')
             os.makedirs(media_path, exist_ok=True)
             
-            # Generate secure filename
             file_name = f"{uuid.uuid4().hex}_{safe_name}"
             file_path = os.path.join(media_path, file_name)
             
-            # Ensure file doesn't already exist (extremely unlikely but safe)
             counter = 1
             while os.path.exists(file_path):
                 name_parts = safe_name.rsplit('.', 1)
@@ -325,7 +322,7 @@ class MessageViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def destroy(self, request, pk=None):
-        """Delete a message (soft delete)"""
+
         message = get_object_or_404(Message, pk=pk)
         
         
@@ -336,15 +333,12 @@ class MessageViewSet(viewsets.ViewSet):
                 {'error': 'Profile not found.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Check if user is the sender
         if message.sender != profile:
             return Response(
                 {'error': 'You can only delete your own messages.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Soft delete
         message.is_deleted = True
         message.content = '[Message deleted]'
         message.media_url = ''
@@ -355,7 +349,6 @@ class MessageViewSet(viewsets.ViewSet):
     @require_privilege_drf('vote')
     @action(detail=True, methods=['post'])
     def react(self, request, pk=None):
-        """Add a reaction to a message"""
         message = get_object_or_404(Message, pk=pk)
         
         
@@ -371,7 +364,6 @@ class MessageViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             emoji = serializer.validated_data['emoji']
             
-            # Create or get existing reaction
             reaction, created = MessageReaction.objects.get_or_create(
                 message=message,
                 profile=profile,
@@ -387,15 +379,12 @@ class MessageViewSet(viewsets.ViewSet):
     
     @action(detail=True, methods=['post'])
     def pin(self, request, pk=None):
-        """Pin or unpin a message"""
         message = get_object_or_404(Message, pk=pk)
         
-        # If currently pinned, just unpin it
         if message.is_pinned:
             message.is_pinned = False
             message.pin_expires_at = None
         else:
-            # Pin the message with duration
             message.is_pinned = True
             duration_hours = request.data.get('duration_hours')
             
@@ -438,9 +427,8 @@ class MessageViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Define size presets for mobile optimization
         size_presets = {
-            'small': (320, 320, 70),   # width, height, quality
+            'small': (320, 320, 70),   
             'medium': (640, 640, 80),
             'large': (1024, 1024, 85),
         }
@@ -448,9 +436,7 @@ class MessageViewSet(viewsets.ViewSet):
         max_width, max_height, quality = size_presets.get(size, size_presets['medium'])
         
         try:
-            # Check if it's a local media file
             if media_url.startswith(settings.MEDIA_URL):
-                # Extract file path from URL
                 file_path = media_url.replace(settings.MEDIA_URL, '')
                 full_path = os.path.join(settings.MEDIA_ROOT, file_path)
                 
@@ -460,7 +446,6 @@ class MessageViewSet(viewsets.ViewSet):
                         status=status.HTTP_404_NOT_FOUND
                     )
                 
-                # Open and optimize image
                 img = Image.open(full_path)
                 
                 # Convert RGBA to RGB if necessary
@@ -471,14 +456,13 @@ class MessageViewSet(viewsets.ViewSet):
                     background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                     img = background
                 
-                # Resize for mobile
+
                 img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
                 
                 output = io.BytesIO()
                 img.save(output, format='JPEG', quality=quality, optimize=True)
                 output.seek(0)
                 
-                # Return optimized image
                 response = HttpResponse(output.getvalue(), content_type='image/jpeg')
                 response['Cache-Control'] = 'public, max-age=86400'  # Cache for 24 hours
                 return response

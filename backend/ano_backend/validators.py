@@ -40,7 +40,7 @@ def validate_request_data(required_fields=None, optional_fields=None, field_vali
                     if field not in data or data[field] in [None, '', []]:
                         errors[field] = [f'{field} is required']
             
-            # Validate field values
+            # val field values
             if field_validators:
                 for field, validator in field_validators.items():
                     if field in data and data[field] not in [None, '']:
@@ -74,7 +74,6 @@ def validate_request_data(required_fields=None, optional_fields=None, field_vali
 
 
 def validate_email(email):
-    """Validate email format"""
     if not isinstance(email, str):
         raise ValueError('Email must be a string')
     
@@ -87,14 +86,12 @@ def validate_email(email):
 
 
 def validate_iiti_email(email):
-    """Validate IIT Indore email domain"""
     validate_email(email)
     if not email.endswith('@iiti.ac.in'):
         raise ValueError('Email must be from @iiti.ac.in domain')
 
 
 def validate_password(password):
-    """Validate password strength"""
     if not isinstance(password, str):
         raise ValueError('Password must be a string')
     
@@ -112,7 +109,6 @@ def validate_password(password):
 
 
 def validate_uuid(value):
-    """Validate UUID format"""
     if not isinstance(value, str):
         raise ValueError('UUID must be a string')
     

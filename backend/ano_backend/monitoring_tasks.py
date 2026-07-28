@@ -1,6 +1,3 @@
-"""
-Monitoring tasks for system health and performance tracking.
-"""
 import logging
 from celery import shared_task
 from django.utils import timezone
@@ -51,7 +48,6 @@ def performance_metrics_report():
     try:
         metrics = PerformanceMonitor.get_all_task_metrics()
         
-        # Log performance summary
         total_tasks = len(metrics)
         healthy_tasks = sum(1 for m in metrics.values() if m.get('success_rate', 0) >= 95)
         

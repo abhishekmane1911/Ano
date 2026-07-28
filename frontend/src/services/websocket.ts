@@ -15,27 +15,26 @@ export class ChatWebSocketService {
   private typingTimeout: number | null = null;
 
   connect(chatroomId: string): void {
-    // Check if already connected or connecting to this chatroom
     if (this.ws) {
       if (this.chatroomId === chatroomId) {
         if (this.ws.readyState === WebSocket.OPEN) {
-          return; // Already connected
+          return;
         }
         if (this.ws.readyState === WebSocket.CONNECTING) {
-          return; // Already connecting
+          return;
         }
       }
-      this.disconnect(); // Disconnect from previous chatroom
+      this.disconnect();
     }
 
     this.chatroomId = chatroomId;
     const accessToken = useAuthStore.getState().accessToken;
-    
+
     if (!accessToken) {
       console.error('No access token available for WebSocket connection');
       return;
     }
-    
+
     // Connect to WebSocket with JWT token in URL
     const wsUrl = `${WS_BASE_URL}/chat/${chatroomId}/?token=${accessToken}`;
     this.ws = new WebSocket(wsUrl);
@@ -155,13 +154,13 @@ export class ChatWebSocketService {
 
     // Don't reconnect on certain error codes
     const noReconnectCodes = [1000, 4001, 4003, 4004]; // Normal closure, auth errors, not found
-    
+
     // Attempt to reconnect if not a normal closure or specific error
     if (!noReconnectCodes.includes(event.code) && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
       console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-      
+
       setTimeout(() => {
         if (this.chatroomId) {
           this.connect(this.chatroomId);
@@ -191,7 +190,7 @@ export class ChatWebSocketService {
   private handleMessageReceive(message: Message): void {
     if (this.chatroomId) {
       useChatStore.getState().addMessage(this.chatroomId, message);
-      
+
       // Increment unread count if not in current chatroom
       const currentChatroom = useChatStore.getState().currentChatroom;
       if (!currentChatroom || currentChatroom.id !== this.chatroomId) {

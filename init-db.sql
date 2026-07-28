@@ -1,6 +1,3 @@
--- PostgreSQL initialization script for production
--- Enable required extensions
-
 -- Enable UUID extension for UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -10,7 +7,6 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- Enable unaccent for better text search
 CREATE EXTENSION IF NOT EXISTS "unaccent";
 
--- Set timezone
 SET timezone = 'UTC';
 
 -- Configure connection pooling parameters
@@ -27,4 +23,3 @@ ALTER SYSTEM SET work_mem = '4MB';
 ALTER SYSTEM SET min_wal_size = '1GB';
 ALTER SYSTEM SET max_wal_size = '4GB';
 
--- Note: These settings will take effect after PostgreSQL restart

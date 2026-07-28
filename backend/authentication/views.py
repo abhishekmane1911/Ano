@@ -22,11 +22,10 @@ from .serializers import (
 )
 from .tasks import send_verification_email, send_password_reset_email
 from ano_backend.logging_config import get_anonymous_id_from_user
-from security.authentication import EnhancedAuthenticationService
+# from security.authentication import EnhancedAuthenticationService
 
 User = get_user_model()
 
-# Get loggers
 logger = logging.getLogger('ano_platform')
 security_logger = logging.getLogger('ano_platform.security')
 
@@ -43,7 +42,6 @@ def register_view(request):
     if serializer.is_valid():
         user = serializer.save()
         
-        # Log registration (using user ID, not email)
         logger.info(f"New user registered: user_{user.id}")
         
         # Send verification email asynchronously using Celery

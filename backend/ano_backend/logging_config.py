@@ -1,67 +1,36 @@
-"""
-Custom logging configuration for Ano platform.
-Ensures all logs use anonymous identifiers instead of emails or real names.
-"""
 import logging
 import re
 from typing import Optional
 
 
 class AnonymousFormatter(logging.Formatter):
-    """
-    Custom formatter that replaces emails and sensitive information with anonymous identifiers.
-    Ensures no PII (Personally Identifiable Information) appears in logs.
-    """
     
-    # Pattern to match email addresses
     EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
-    
-    # Pattern to match common name patterns (first name, last name)
-    # This is a basic pattern - adjust based on your needs
     NAME_PATTERN = re.compile(r'\b(first_name|last_name|full_name|name)[\s:=]+["\']?([^"\'}\s,]+)["\']?', re.IGNORECASE)
     
     def format(self, record: logging.LogRecord) -> str:
-        """
-        Format the log record, replacing sensitive information with anonymous identifiers.
-        """
-        # Format the message first
         original_msg = super().format(record)
         
-        # Replace email addresses with [EMAIL_REDACTED]
         sanitized_msg = self.EMAIL_PATTERN.sub('[EMAIL_REDACTED]', original_msg)
         
-        # Replace name fields with [NAME_REDACTED]
         sanitized_msg = self.NAME_PATTERN.sub(r'\1: [NAME_REDACTED]', sanitized_msg)
         
         return sanitized_msg
 
 
 def get_anonymous_id_from_user(user) -> Optional[str]:
-    """
-    Extract anonymous_id from a user object.
-    Returns the profile's anonymous_id if available, otherwise returns a generic identifier.
-    
-    Args:
-        user: Django User object
-        
-    Returns:
-        Anonymous identifier string or None
-    """
     if not user or not user.is_authenticated:
         return None
     
     try:
-        # Try to get the profile's anonymous_id
         if hasattr(user, 'profile'):
             profile = getattr(user, 'profile', None)
             if profile and hasattr(profile, 'anonymous_id'):
                 return str(profile.anonymous_id)
     except Exception as e:
-        # Profile might not exist yet or there's a database issue
-        # Log the error but don't fail
         pass
     
-    # Fallback to user UUID (still anonymous, not email)
+
     return f"user_{user.id}"
 
 
@@ -110,7 +79,7 @@ def get_logging_config(log_dir: str = 'logs'):
                 'level': 'INFO',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'filename': f'{log_dir}/ano_platform.log',
-                'maxBytes': 10485760,  # 10 MB
+                'maxBytes': 10485760, 
                 'backupCount': 10,
                 'formatter': 'verbose',
             },
@@ -118,7 +87,7 @@ def get_logging_config(log_dir: str = 'logs'):
                 'level': 'ERROR',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'filename': f'{log_dir}/errors.log',
-                'maxBytes': 10485760,  # 10 MB
+                'maxBytes': 10485760, 
                 'backupCount': 10,
                 'formatter': 'verbose',
             },
@@ -126,8 +95,8 @@ def get_logging_config(log_dir: str = 'logs'):
                 'level': 'WARNING',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'filename': f'{log_dir}/security.log',
-                'maxBytes': 10485760,  # 10 MB
-                'backupCount': 20,  # Keep more security logs
+                'maxBytes': 10485760, 
+                'backupCount': 20, 
                 'formatter': 'verbose',
             },
         },

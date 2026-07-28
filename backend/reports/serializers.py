@@ -36,13 +36,12 @@ class ReportSerializer(serializers.ModelSerializer):
         reported_id = validated_data.pop('reported_id')
         reported_profile = Profile.objects.get(anonymous_id=reported_id)
         
-        # Get reporter profile from request user
         try:
             reporter_profile = self.context['request'].user.profile
         except Profile.DoesNotExist:
             raise serializers.ValidationError("User profile not found")
         
-        # Prevent self-reporting
+
         if reporter_profile == reported_profile:
             raise serializers.ValidationError("Cannot report yourself")
         
@@ -83,17 +82,14 @@ class BlockSerializer(serializers.ModelSerializer):
         blocked_id = validated_data.pop('blocked_id')
         blocked_profile = Profile.objects.get(anonymous_id=blocked_id)
         
-        # Get blocker profile from request user
         try:
             blocker_profile = self.context['request'].user.profile
         except Profile.DoesNotExist:
             raise serializers.ValidationError("User profile not found")
-        
-        # Prevent self-blocking
+
         if blocker_profile == blocked_profile:
             raise serializers.ValidationError("Cannot block yourself")
         
-        # Check if block already exists
         if Block.objects.filter(blocker=blocker_profile, blocked=blocked_profile).exists():
             raise serializers.ValidationError("User already blocked")
         

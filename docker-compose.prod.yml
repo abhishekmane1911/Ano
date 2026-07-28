@@ -23,7 +23,6 @@ services:
     networks:
       - ano_network
 
-  # Redis Cache and Channel Layer
   redis:
     image: redis:7-alpine
     container_name: ano_redis
@@ -41,7 +40,6 @@ services:
     networks:
       - ano_network
 
-  # Backend WSGI Server 
   backend:
     build:
       context: ./backend
@@ -89,7 +87,6 @@ services:
     networks:
       - ano_network
 
-  # Backend ASGI Server
   backend_asgi:
     build:
       context: ./backend
@@ -135,7 +132,6 @@ services:
     networks:
       - ano_network
 
-  # Celery Worker for async tasks
   celery_worker:
     build:
       context: ./backend
@@ -174,7 +170,6 @@ services:
     networks:
       - ano_network
 
-  # Celery Beat for scheduled tasks
   celery_beat:
     build:
       context: ./backend
@@ -205,7 +200,6 @@ services:
     networks:
       - ano_network
 
-  # Frontend with Nginx
   frontend:
     build:
       context: ./frontend

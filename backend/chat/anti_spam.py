@@ -59,14 +59,21 @@ class AntiSpamSystem:
     
     #  rate limiting
     
-    async def check_message_rate_limit(self) -> Tuple[bool, Optional[str]]:
-        cache_key = f'{self.cache_prefix}:msg_rate'
+    async def check_message_rate_limit(self, content: str) -> Tuple[bool, Optional[str]]:
+        # Apply a looser rate limit for short messages (e.g. "hi", "ok")
+        is_short = len(content.strip()) <= self.SHORT_MESSAGE_THRESHOLD
+        
+        # Use separate cache buckets for short vs long messages
+        cache_key = f'{self.cache_prefix}:msg_rate:{"short" if is_short else "long"}'
+        
+        # Calculate allowed limit
+        limit = int(self.MESSAGE_RATE_LIMIT * self.SHORT_MESSAGE_BURST_MULTIPLIER) if is_short else self.MESSAGE_RATE_LIMIT
         
         # INCR is atomic , no race possible better than get then incr
         new_count = await self._cache_incr(cache_key, self.MESSAGE_RATE_WINDOW)
         
-        if new_count > self.MESSAGE_RATE_LIMIT:
-            if(new_count == self.MESSAGE_RATE_LIMIT +1):
+        if new_count > limit:
+            if(new_count == limit + 1):
                 await self._record_violation('rate_limit')
             return False, f'Rate limit exceeded. Please wait {self.MESSAGE_RATE_WINDOW} seconds.'
         
@@ -398,7 +405,7 @@ class AntiSpamSystem:
         
         # return caps_ratio > 0.80
 
-        return false
+        return False
     
     def _is_conversational_pattern(self, content: str) -> bool:
         """
@@ -490,7 +497,7 @@ class SpamDetectionMiddleware:
         # For message sends, run all checks
         if event_type == 'message.send':
             # Rate limit check
-            allowed, error = await spam_detector.check_message_rate_limit()
+            allowed, error = await spam_detector.check_message_rate_limit(content)
             if not allowed:
                 return False, error
             

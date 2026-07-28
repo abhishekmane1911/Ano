@@ -2,10 +2,11 @@
 Management command to delete all users and related data.
 Use with caution - this will delete ALL users from the database!
 """
+# from security.models import HashedIdentity
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from profiles.models import Profile
-from security.models import HashedIdentity
+# from security.models import HashedIdentity
 from chat.models import Message
 from matchmaking.models import Match
 from reports.models import Report
@@ -39,14 +40,14 @@ class Command(BaseCommand):
         # Count before deletion
         user_count = User.objects.count()
         profile_count = Profile.objects.count()
-        hashed_identity_count = HashedIdentity.objects.count()
+        # hashed_identity_count = HashedIdentity.objects.count()
         message_count = Message.objects.count()
         match_count = Match.objects.count()
         report_count = Report.objects.count()
 
         self.stdout.write(f'Found {user_count} users')
         self.stdout.write(f'Found {profile_count} profiles')
-        self.stdout.write(f'Found {hashed_identity_count} hashed identities')
+        # self.stdout.write(f'Found {hashed_identity_count} hashed identities')
         self.stdout.write(f'Found {message_count} messages')
         self.stdout.write(f'Found {match_count} matches')
         self.stdout.write(f'Found {report_count} reports')
@@ -64,8 +65,8 @@ class Command(BaseCommand):
         self.stdout.write('Deleting profiles...')
         Profile.objects.all().delete()
         
-        self.stdout.write('Deleting hashed identities...')
-        HashedIdentity.objects.all().delete()
+        # self.stdout.write('Deleting hashed identities...')
+        # HashedIdentity.objects.all().delete()
         
         self.stdout.write('Deleting users...')
         User.objects.all().delete()
@@ -75,7 +76,6 @@ class Command(BaseCommand):
                 f'\nSuccessfully deleted:\n'
                 f'  - {user_count} users\n'
                 f'  - {profile_count} profiles\n'
-                f'  - {hashed_identity_count} hashed identities\n'
                 f'  - {message_count} messages\n'
                 f'  - {match_count} matches\n'
                 f'  - {report_count} reports\n'

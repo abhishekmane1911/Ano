@@ -1,14 +1,9 @@
-"""
-Security middleware for Ano platform.
-Implements HTTPS redirect, CSP headers, and additional security protections.
-"""
 import logging
 import time
 from django.http import HttpResponsePermanentRedirect
 from django.conf import settings
 from ano_backend.logging_config import get_anonymous_id_from_user
 
-# Get loggers
 request_logger = logging.getLogger('ano_platform')
 security_logger = logging.getLogger('ano_platform.security')
 
@@ -26,14 +21,13 @@ class SecurityHeadersMiddleware:
         response = self.get_response(request)
         
         # Content Security Policy
-        # Restricts sources for scripts, styles, images, etc.
         csp_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Allow inline scripts for React
-            "style-src 'self' 'unsafe-inline'",  # Allow inline styles for Tailwind
-            "img-src 'self' data: blob: https:",  # Allow images from self, data URIs, and HTTPS
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'", 
+            "style-src 'self' 'unsafe-inline'", 
+            "img-src 'self' data: blob: https:",  
             "font-src 'self' data:",
-            "connect-src 'self' ws: wss:",  # Allow WebSocket connections
+            "connect-src 'self' ws: wss:",  
             "media-src 'self' blob:",
             "object-src 'none'",
             "base-uri 'self'",
@@ -43,7 +37,7 @@ class SecurityHeadersMiddleware:
         ]
         response['Content-Security-Policy'] = '; '.join(filter(None, csp_directives))
         
-        # Additional security headers
+        # more security headers
         response['X-Content-Type-Options'] = 'nosniff'
         response['X-Frame-Options'] = 'DENY'
         response['X-XSS-Protection'] = '1; mode=block'
@@ -67,11 +61,8 @@ class HTTPSRedirectMiddleware:
         import sys
         is_testing = 'test' in sys.argv or hasattr(settings, 'TESTING')
         
-        # Only redirect in production (when DEBUG is False and not testing)
         if not settings.DEBUG and not is_testing:
-            # Check if request is not secure (HTTP)
             if not request.is_secure():
-                # Build HTTPS URL
                 url = request.build_absolute_uri(request.get_full_path())
                 secure_url = url.replace('http://', 'https://', 1)
                 return HttpResponsePermanentRedirect(secure_url)
@@ -89,7 +80,6 @@ class AnonymousLoggingMiddleware:
         self.get_response = get_response
     
     def __call__(self, request):
-        # Record start time
         start_time = time.time()
         
         # Get anonymous identifier for the user
@@ -97,13 +87,10 @@ class AnonymousLoggingMiddleware:
         if hasattr(request, 'user'):
             anonymous_id = get_anonymous_id_from_user(request.user)
         
-        # Process the request
         response = self.get_response(request)
         
-        # Calculate request duration
         duration = time.time() - start_time
         
-        # Log the request with anonymous identifier
         log_data = {
             'method': request.method,
             'path': request.path,
@@ -113,7 +100,6 @@ class AnonymousLoggingMiddleware:
             'ip': self._get_client_ip(request),
         }
         
-        # Log at appropriate level based on status code
         if response.status_code >= 500:
             request_logger.error(
                 f"{log_data['method']} {log_data['path']} - "
@@ -161,4 +147,4 @@ class AnonymousLoggingMiddleware:
             f"Exception: {type(exception).__name__}"
         )
         
-        return None  # Let Django handle the exception normally
+        return None  

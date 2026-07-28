@@ -9,10 +9,8 @@ from .views import (
 app_name = 'reports'
 
 urlpatterns = [
-    # Report endpoints
     path('', ReportCreateView.as_view(), name='report-create'),
     
-    # Block endpoints
     path('block/', BlockCreateView.as_view(), name='block-create'),
     path('blocked/', BlockedUsersListView.as_view(), name='blocked-list'),
     path('block/<uuid:anonymous_id>/', unblock_user, name='unblock-user'),

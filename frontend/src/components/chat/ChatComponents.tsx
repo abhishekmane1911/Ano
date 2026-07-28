@@ -37,7 +37,6 @@ export const TypingIndicator = ({ chatroomId }: { chatroomId: string }) => {
   );
 };
 
-// --- Pinned Messages Widget ---
 export const PinnedMessages = ({ messages, onMessageClick }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const pinned = messages.filter((m: any) => m.is_pinned && !m.is_deleted);

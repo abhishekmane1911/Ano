@@ -12,13 +12,9 @@ def get_blocked_profile_ids(profile):
     Returns:
         Set of profile IDs that should be filtered out
     """
-    # Get profiles blocked by this user
     blocked_by_user = Block.objects.filter(blocker=profile).values_list('blocked_id', flat=True)
-    
-    # Get profiles that have blocked this user
     blocked_this_user = Block.objects.filter(blocked=profile).values_list('blocker_id', flat=True)
     
-    # Combine both sets
     blocked_ids = set(blocked_by_user) | set(blocked_this_user)
     
     return blocked_ids

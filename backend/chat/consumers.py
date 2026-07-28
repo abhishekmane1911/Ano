@@ -19,9 +19,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     presence updates, and read receipts.
     """
     
-    # Rate limiting: max 10 messages per 10 seconds per user
     RATE_LIMIT_MESSAGES = 10
-    RATE_LIMIT_WINDOW = 10  # seconds
+    RATE_LIMIT_WINDOW = 10 
     
     async def connect(self):
         """Handle WebSocket connection"""
@@ -29,24 +28,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.chatroom_group_name = f'chat_{self.chatroom_id}'
         self.user = self.scope['user']
         
-        # Check if user is authenticated
         if self.user.is_anonymous:
             await self.close(code=4001)
             return
         
-        # Verify chatroom exists
         chatroom_exists = await self.chatroom_exists(self.chatroom_id)
         if not chatroom_exists:
             await self.close(code=4004)
             return
         
-        # Get user's profile
         self.profile = await self.get_user_profile(self.user)
         if not self.profile:
             await self.close(code=4003)
             return
         
-        # Join chatroom group
         await self.channel_layer.group_add(
             self.chatroom_group_name,
             self.channel_name
@@ -54,7 +49,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         await self.accept()
         
-        # Broadcast user join event
         await self.channel_layer.group_send(
             self.chatroom_group_name,
             {
@@ -102,6 +96,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 )
                 
                 if not is_allowed:
+                    if event_type == 'typing.start':
+                        # Silently ignore typing indicator rate limits
+                        return
                     await self.send(text_data=json.dumps({
                         'type': 'error',
                         'message': error_message,
@@ -133,7 +130,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': time.time()
                 }))
             else:
-                # Silently ignore unknown event types to avoid spam
                 pass
         
         except json.JSONDecodeError:
@@ -148,12 +144,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
     
     async def handle_message_send(self, data):
-        """Handle sending a new message"""
         content = data.get('content', '').strip()
         message_type = data.get('message_type', 'text')
         media_url = data.get('media_url', '')
         
-        # Validate content length
         if len(content) > 2000:  # Reasonable message length limit
             await self.send(text_data=json.dumps({
                 'type': 'error',
@@ -161,7 +155,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
             return
         
-        # Basic HTML/script tag sanitization
         import re
         if re.search(r'<script|javascript:|data:|vbscript:', content, re.IGNORECASE):
             await self.send(text_data=json.dumps({
@@ -179,7 +172,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         # Validate media URL if provided
         if media_url:
-            # Basic validation - check if it's a proper media URL
             if not media_url.startswith(('/media/', 'http://', 'https://')):
                 await self.send(text_data=json.dumps({
                     'type': 'error',
@@ -187,7 +179,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }))
                 return
         
-        # Create message in database (with moderation)
         message = await self.create_message(
             content=content,
             message_type=message_type,
@@ -195,7 +186,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         
         if message:
-            # Broadcast message to chatroom
             await self.channel_layer.group_send(
                 self.chatroom_group_name,
                 {
@@ -204,7 +194,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         else:
-            # Message was rejected by moderation
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Your message was rejected due to community guidelines violation. Please be respectful.'
@@ -562,7 +551,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 media_url=media_url
             )
             
-            # Apply AI moderation
             try:
                 from moderation.services import ModerationService
                 moderation_result = ModerationService.moderate_content(message)

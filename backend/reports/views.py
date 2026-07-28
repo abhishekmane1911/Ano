@@ -11,7 +11,6 @@ from .serializers import ReportSerializer, BlockSerializer, BlockedUserSerialize
 from profiles.models import Profile
 from ano_backend.logging_config import get_anonymous_id_from_user
 
-# Get loggers
 logger = logging.getLogger('ano_platform')
 security_logger = logging.getLogger('ano_platform.security')
 
@@ -24,7 +23,6 @@ class ReportCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         report = serializer.save()
         
-        # Log report creation with anonymous IDs
         reporter_id = get_anonymous_id_from_user(self.request.user)
         security_logger.warning(
             f"Report created - Reporter: {reporter_id}, "
@@ -32,14 +30,12 @@ class ReportCreateView(generics.CreateAPIView):
             f"Reason: {report.reason}"
         )
         
-        # Check for report escalation
         reported_profile = report.reported
         report_count = Report.objects.filter(
             reported=reported_profile,
             status='pending'
         ).count()
         
-        # Escalate if user has received 3 or more pending reports
         ESCALATION_THRESHOLD = 3
         if report_count >= ESCALATION_THRESHOLD:
             security_logger.error(
@@ -60,7 +56,6 @@ Total Pending Reports: {report_count}
 Please review the reports in the admin dashboard.
         '''
         
-        # Get admin emails
         from authentication.models import User
         admin_emails = User.objects.filter(is_staff=True).values_list('email', flat=True)
         
@@ -74,19 +69,16 @@ Please review the reports in the admin dashboard.
                     fail_silently=True,
                 )
             except Exception as e:
-                # Log error but don't fail the request
                 print(f"Failed to send escalation email: {e}")
 
 
 class BlockCreateView(generics.CreateAPIView):
-    """Block a user"""
     serializer_class = BlockSerializer
     permission_classes = [IsAuthenticated]
     
     def perform_create(self, serializer):
         block = serializer.save()
         
-        # Log block creation with anonymous IDs
         blocker_id = get_anonymous_id_from_user(self.request.user)
         security_logger.warning(
             f"User blocked - Blocker: {blocker_id}, "
@@ -95,7 +87,6 @@ class BlockCreateView(generics.CreateAPIView):
 
 
 class BlockedUsersListView(generics.ListAPIView):
-    """List all blocked users for the current user"""
     serializer_class = BlockedUserSerializer
     permission_classes = [IsAuthenticated]
     
@@ -104,16 +95,13 @@ class BlockedUsersListView(generics.ListAPIView):
             user_profile = self.request.user.profile
             return Block.objects.filter(blocker=user_profile).select_related('blocked')
         except Profile.DoesNotExist:
-            # User doesn't have a profile yet, return empty queryset
             return Block.objects.none()
 
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def unblock_user(request, anonymous_id):
-    """Unblock a user by their anonymous ID"""
     try:
-        # Check if user has a profile
         try:
             user_profile = request.user.profile
         except Profile.DoesNotExist:
@@ -124,7 +112,6 @@ def unblock_user(request, anonymous_id):
         
         blocked_profile = Profile.objects.get(anonymous_id=anonymous_id)
         
-        # Find and delete the block
         block = Block.objects.filter(
             blocker=user_profile,
             blocked=blocked_profile
@@ -138,7 +125,6 @@ def unblock_user(request, anonymous_id):
         
         block.delete()
         
-        # Log unblock with anonymous IDs
         blocker_id = get_anonymous_id_from_user(request.user)
         logger.info(
             f"User unblocked - Blocker: {blocker_id}, "
