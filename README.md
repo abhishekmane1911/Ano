@@ -4,7 +4,7 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 
 > **Note:** Matchmaking is currently disabled in the UI while the matching algorithm is being improved. The backend code for matchmaking exists but the frontend routes are commented out.
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Features](#-features)
 - [Architecture](#️-architecture)
@@ -24,7 +24,7 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 
 ---
 
-## ✨ Features
+##  Features
 
 ### Core Features
 - **Anonymous Authentication** — IIT Indore email (`@iiti.ac.in`) verification with email OTP; UUID-based user IDs throughout
@@ -82,7 +82,7 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -106,9 +106,9 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 └───────┬────────┘                    └────────┬────────┘
         │                                      │
 ┌───────▼──────────────────────────────────────▼──────────┐
-│                Django 5.2 Application Layer              │
-│  Auth | Profiles | Chat | Matchmaking | Reports         │
-│  Reputation | Moderation | Security | Admin Dashboard   │
+│                Django 5.2 Application Layer             │
+│  Auth | Profiles | Chat | Reports | Reputation          │
+│ Moderation | Security | Admin Dashboard                  │
 └──────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┴───────────────────┐
@@ -175,7 +175,7 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 
 ---
 
-## 📦 Prerequisites
+##  Prerequisites
 
 - **Node.js** 18+ and npm
 - **Python** 3.11+
@@ -184,14 +184,14 @@ An anonymous chatting platform exclusively for IIT Indore students (`@iiti.ac.in
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd Ano
 
-# Start PostgreSQL and Redis via Docker
+# Start PostgreSQL and Redis via Docker for dev 
 docker-compose up -d
 
 # --- Backend ---
@@ -202,7 +202,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env            # Edit .env with your settings
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py runserver
+daphne -b 127.0.0.1 -p 8000 ano_backend.asgi:application
 
 # --- Frontend (new terminal) ---
 cd frontend
@@ -227,47 +227,40 @@ Access the app:
 
 ---
 
-## 💻 Development Setup
+##  Development Setup
 
 ### Backend (Detailed)
 
 ```bash
 cd backend
 
-# Virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install all dependencies (including dev tools: pytest, black, flake8)
 pip install -r requirements-dev.txt
 
-# Configure environment
 cp .env.example .env
-# Edit .env — minimum required: SECRET_KEY, DB_*, REDIS_*
 
-# Database setup
 python manage.py migrate
 python manage.py createsuperuser
 
-# Load legal documents (terms, privacy policy)
 python manage.py shell < load_legal_docs.py
 
-# Start development server
-python manage.py runserver
+daphne -b 127.0.0.1 -p 8000 ano_backend.asgi:application
 ```
 
 **Useful backend commands:**
 ```bash
-pytest                               # Run all tests
+pytest                               
 pytest --cov=. --cov-report=html    # Coverage report
 pytest -v authentication/tests.py   # Test specific app
-black .                             # Format code
+black .                            
 flake8                              # Lint code
 python manage.py makemigrations     # Create migrations
 python manage.py migrate            # Apply migrations
 celery -A ano_backend worker -l info            # Start Celery worker
 celery -A ano_backend beat -l info              # Start Celery beat (scheduled tasks)
-python manage.py cleanup_test_data  # Remove test/seed data
+python manage.py cleanup_test_data 
 ```
 
 ### Frontend (Detailed)
@@ -277,16 +270,11 @@ cd frontend
 npm install
 
 cp .env.example .env
-# Set VITE_API_BASE_URL and VITE_WS_BASE_URL
 
-npm run dev             # Start dev server (http://localhost:5173)
-npm run build           # Production build (tsc + vite)
-npm run build:prod      # Vite build only (skips tsc)
-npm run preview         # Preview production build
-npm run lint            # Run ESLint
-npm run lint:fix        # Auto-fix lint errors
-npm run format          # Format with Prettier
-npm run format:check    # Check formatting
+npm run dev             
+npm run build           
+npm run build:prod     
+npm run preview        
 ```
 
 ---
@@ -296,12 +284,11 @@ npm run format:check    # Check formatting
 ### Backend (`backend/.env`)
 
 ```bash
-# Django Core
 SECRET_KEY=your-secret-key-here-change-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database (PostgreSQL)
+# Database 
 DB_NAME=ano_db
 DB_USER=ano_user
 DB_PASSWORD=ano_password
@@ -312,7 +299,7 @@ DB_PORT=5432
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# JWT (in minutes)
+# JWT 
 JWT_ACCESS_TOKEN_LIFETIME=15
 JWT_REFRESH_TOKEN_LIFETIME=10080   # 7 days
 
@@ -356,7 +343,7 @@ VITE_ENV=development
 
 ---
 
-## 🧪 Running Tests
+##  Running Tests
 
 ### Backend Tests
 
@@ -373,7 +360,6 @@ pytest test_spam_detection.py                       # Spam detection tests
 pytest test_moderation.py                           # Moderation tests
 pytest test_password_reset.py                       # Password reset tests
 pytest chat/test_websocket.py                       # WebSocket tests
-pytest matchmaking/test_websocket.py               # Matchmaking WS tests
 ```
 
 Test files present:
@@ -389,9 +375,7 @@ Test files present:
 
 ---
 
-## 📚 API Reference
-
-Full documentation: [`docs/API.md`](docs/API.md)
+##  API Reference
 
 ### Authentication (`/api/auth/`)
 | Method | Endpoint | Description |
@@ -425,14 +409,6 @@ Full documentation: [`docs/API.md`](docs/API.md)
 | GET | `/chatrooms/{uuid}/search/` | Full-text search messages |
 | POST | `/chatrooms/{uuid}/polls/` | Create poll (Campus Legend) |
 | POST | `/polls/{uuid}/vote/` | Vote on poll |
-
-### Matchmaking (`/api/matchmaking/`)
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/profiles/` | Get profiles to swipe |
-| POST | `/swipe/` | Record swipe (`like`/`pass`) |
-| GET | `/matches/` | List matched users |
-| GET | `/matches/{id}/messages/` | Match chat history |
 
 ### Reports & Safety (`/api/reports/`)
 | Method | Endpoint | Description |
@@ -476,9 +452,7 @@ Full documentation: [`docs/API.md`](docs/API.md)
 
 ---
 
-## 🔌 WebSocket Events
-
-Full documentation: [`docs/WEBSOCKETS.md`](docs/WEBSOCKETS.md)
+##  WebSocket Events
 
 ### Chatroom WebSocket — `ws://localhost:8000/ws/chat/{chatroom_uuid}/`
 
@@ -507,15 +481,6 @@ Full documentation: [`docs/WEBSOCKETS.md`](docs/WEBSOCKETS.md)
 | `user.left` | User left chatroom |
 | `moderation.notification` | Shadowban/rejection notice |
 
-### Match WebSocket — `ws://localhost:8000/ws/matchmaking/matches/{match_id}/`
-
-**Client → Server:** `message.send`, `typing.start`, `typing.stop`
-
-**Server → Client:** `message.receive`, `typing.indicator`, `user.online`, `user.offline`
-
-### Reputation WebSocket — `ws://localhost:8000/ws/reputation/`
-
-**Server → Client:** `reputation.update`, `tier.promoted`, `vote.received`, `moderation.notification`
 
 ---
 
@@ -554,11 +519,6 @@ Ano/
 │   │   ├── anti_spam.py             # AntiSpamSystem + SpamDetectionMiddleware
 │   │   ├── routing.py               # WebSocket URL routing
 │   │   └── views.py                 # REST endpoints for chatrooms/messages
-│   ├── matchmaking/                 # Matchmaking app
-│   │   ├── models.py                # Swipe, Match models
-│   │   ├── consumers.py             # MatchConsumer WebSocket handler
-│   │   ├── routing.py               # WebSocket URL routing
-│   │   └── views.py                 # Swipe, match, profile discovery endpoints
 │   ├── reports/                     # Reports & blocking app
 │   │   └── models.py                # Report, Block models
 │   ├── reputation/                  # Gamification app
@@ -618,14 +578,8 @@ Ano/
 │   ├── nginx.conf                   # Nginx config (HTTP)
 │   ├── nginx-ssl.conf               # Nginx config (HTTPS)
 │   └── Dockerfile / Dockerfile.prod
-├── docs/
-│   ├── API.md                       # Complete REST API reference
-│   ├── WEBSOCKETS.md                # WebSocket events & payloads
-│   ├── DEVELOPER_GUIDE.md           # Developer onboarding
-│   ├── ENVIRONMENT.md               # All environment variables reference
-│   └── README.md                    # Docs index
 ├── docker-compose.yml               # Dev services (PostgreSQL 15 + Redis 7)
-├── docker-compose.prod.yml          # Full production stack
+├── docker-compose.prod.yml          # Full production stack all services containerized
 ├── deploy.sh                        # Production deployment script
 ├── start-dev.sh                     # Local development start script
 ├── monitor.sh                       # Production monitoring script
@@ -640,9 +594,7 @@ Ano/
 
 ---
 
-## 🚢 Deployment
-
-See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for full production instructions.
+##  Deployment
 
 ### Quick Production Deployment
 
@@ -665,38 +617,8 @@ docker-compose -f docker-compose.prod.yml exec backend python manage.py collects
 
 ---
 
-## 📖 Documentation
 
-| Document | Description |
-|---|---|
-| [`docs/API.md`](docs/API.md) | Complete REST API reference with request/response examples |
-| [`docs/WEBSOCKETS.md`](docs/WEBSOCKETS.md) | WebSocket events, payloads, and connection management |
-| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Developer onboarding and architecture decisions |
-| [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) | All environment variables with descriptions and defaults |
-| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) | Production deployment on VPS / cloud |
-| [`COMMUNITY_GUIDELINES.md`](COMMUNITY_GUIDELINES.md) | Community rules and moderation policy |
-| [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | Privacy policy |
-| [`TERMS_OF_SERVICE.md`](TERMS_OF_SERVICE.md) | Terms of service |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes using conventional commits (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- **Backend**: PEP 8 — use `black .` for formatting, `flake8` for linting
-- **Frontend**: ESLint + Prettier (`npm run format` and `npm run lint:fix`)
-- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) format
-
----
-
-## 🔒 Security Notes
+##  Security Notes
 
 - All user identifiers exposed in any API response are UUIDs (never email addresses or real names)
 - Logs use anonymous IDs only — no PII is ever written to log files
@@ -707,7 +629,7 @@ docker-compose -f docker-compose.prod.yml exec backend python manage.py collects
 
 ---
 
-## 🎯 Roadmap
+##  Roadmap
 
 - [ ] Re-enable matchmaking with improved algorithm
 - [ ] Voice messages in chat

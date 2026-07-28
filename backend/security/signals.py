@@ -1,7 +1,3 @@
-"""
-Signal handlers for security module.
-Automatically creates hashed identities for new users.
-"""
 import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -21,11 +17,9 @@ def create_hashed_identity(sender, instance, created, **kwargs):
     """
     if created:
         try:
-            # Check if hashed identity already exists
             if hasattr(instance, 'hashed_identity') and instance.hashed_identity:
                 return
             
-            # Create hashed identity
             email_hash, salt = IdentityHasher.hash_email(instance.email)
             HashedIdentity.objects.create(
                 user=instance,
@@ -36,4 +30,3 @@ def create_hashed_identity(sender, instance, created, **kwargs):
             
         except Exception as e:
             logger.error(f"Failed to create hashed identity for user_{instance.id}: {e}")
-            # Don't fail user creation if hashing fails

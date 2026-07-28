@@ -1,22 +1,19 @@
-#!/bin/bash
-
 # Ano Platform Monitoring Script
 # Checks health of all services and sends alerts if needed
 
 set -e
 
-# Configuration
+# confid
 COMPOSE_FILE="docker-compose.prod.yml"
 LOG_FILE="monitoring.log"
 ALERT_EMAIL="${ALERT_EMAIL:-admin@example.com}"
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Logging
+# logs
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }

@@ -1,7 +1,3 @@
-"""
-Advanced security middleware for rate limiting and input sanitization.
-Part of the Advanced Gamification Modules implementation.
-"""
 import logging
 import json
 from typing import Optional
@@ -23,7 +19,6 @@ class RateLimitingMiddleware(MiddlewareMixin):
     Implements progressive delays and security event logging.
     """
     
-    # Actions that require rate limiting
     RATE_LIMITED_ACTIONS = {
         'POST': {
             '/api/chat/messages/': 'post_creation',
@@ -38,25 +33,20 @@ class RateLimitingMiddleware(MiddlewareMixin):
     
     def process_request(self, request: HttpRequest) -> Optional[JsonResponse]:
         """Process request and check rate limits"""
-        # Skip rate limiting for certain paths
         if self._should_skip_rate_limiting(request):
             return None
         
-        # Get user and IP address
         user = getattr(request, 'user', None)
         ip_address = self._get_client_ip(request)
         
-        # Determine action type based on request
         action_type = self._get_action_type(request)
         if not action_type:
             return None
         
-        # For login attempts, always check rate limit (even for anonymous users)
-        # For other actions, only check if user is authenticated
+
         if action_type != 'login_attempt' and (not user or not user.is_authenticated):
             return None
         
-        # Check rate limit
         if not RateLimitService.check_rate_limit(user, action_type, ip_address):
             remaining = RateLimitService.get_remaining_requests(user, action_type)
             
@@ -76,15 +66,12 @@ class RateLimitingMiddleware(MiddlewareMixin):
     
     def _should_skip_rate_limiting(self, request: HttpRequest) -> bool:
         """Check if rate limiting should be skipped for this request"""
-        # Skip for admin endpoints
         if request.path.startswith('/admin/'):
             return True
         
-        # Skip for static files
         if request.path.startswith('/static/') or request.path.startswith('/media/'):
             return True
         
-        # Skip for health checks
         if request.path in ['/health/', '/api/health/']:
             return True
         
@@ -95,14 +82,12 @@ class RateLimitingMiddleware(MiddlewareMixin):
         method = request.method
         path = request.path
         
-        # Check specific path mappings
         if method in self.RATE_LIMITED_ACTIONS:
             action_mappings = self.RATE_LIMITED_ACTIONS[method]
             for endpoint, action in action_mappings.items():
                 if path.startswith(endpoint):
                     return action
         
-        # General API request rate limiting
         if path.startswith('/api/'):
             return 'api_request'
         
@@ -123,7 +108,7 @@ class RateLimitingMiddleware(MiddlewareMixin):
         if action_type in rate_limits:
             _, time_window = rate_limits[action_type]
             return time_window
-        return 3600  # Default 1 hour
+        return 3600  
 
 
 class InputSanitizationMiddleware(MiddlewareMixin):
@@ -132,12 +117,10 @@ class InputSanitizationMiddleware(MiddlewareMixin):
     Validates and escapes all user-generated content before processing.
     """
     
-    # Content fields that need sanitization
     SANITIZE_FIELDS = [
         'content', 'message', 'text', 'description', 'title', 'bio', 'comment'
     ]
     
-    # Maximum lengths for different content types
     MAX_LENGTHS = {
         'content': 5000,
         'message': 2000,
@@ -150,20 +133,16 @@ class InputSanitizationMiddleware(MiddlewareMixin):
     
     def process_request(self, request: HttpRequest) -> Optional[JsonResponse]:
         """Process request and sanitize input"""
-        # Skip sanitization for certain paths
         if self._should_skip_sanitization(request):
             return None
         
-        # Only sanitize POST and PUT requests with content
         if request.method not in ['POST', 'PUT', 'PATCH']:
             return None
         
-        # Get user and IP for logging
         user = getattr(request, 'user', None)
         ip_address = self._get_client_ip(request)
         
         try:
-            # Parse request body
             if hasattr(request, 'body') and request.body:
                 if request.content_type == 'application/json':
                     data = json.loads(request.body.decode('utf-8'))
@@ -186,23 +165,18 @@ class InputSanitizationMiddleware(MiddlewareMixin):
     
     def _should_skip_sanitization(self, request: HttpRequest) -> bool:
         """Check if sanitization should be skipped for this request"""
-        # Skip for admin endpoints
         if request.path.startswith('/admin/'):
             return True
         
-        # Skip for ALL authentication endpoints (passwords shouldn't be sanitized)
         if '/auth/' in request.path:
             return True
         
-        # Skip for profile endpoints (contains sensitive data)
         if '/profiles/' in request.path:
             return True
         
-        # Skip for file uploads
         if request.content_type and request.content_type.startswith('multipart/'):
             return True
         
-        # Skip for health checks
         if request.path in ['/health/', '/api/health/']:
             return True
         
@@ -236,24 +210,19 @@ class InputSanitizationMiddleware(MiddlewareMixin):
         if not content:
             return content
         
-        # Check input length
         max_length = self.MAX_LENGTHS.get(field_name.lower(), 2000)
         if not InputSanitizer.validate_input_length(content, max_length):
             raise ValueError(f"Content too long for field {field_name}")
         
-        # Check for malicious patterns
         if InputSanitizer.check_for_malicious_patterns(content, user, ip_address):
             security_logger.warning(
                 f"Malicious pattern detected in {field_name} from user "
                 f"{user.id if user else 'anonymous'} at IP {ip_address}"
             )
-            # Return sanitized version instead of rejecting
             return InputSanitizer.escape_javascript(content)
         
-        # Sanitize HTML content
         sanitized = InputSanitizer.sanitize_html(content)
         
-        # Additional JavaScript escaping for safety
         sanitized = InputSanitizer.escape_javascript(sanitized)
         
         return sanitized
@@ -276,11 +245,9 @@ class EnhancedCSRFMiddleware(CsrfViewMiddleware):
     
     def process_view(self, request, callback, callback_args, callback_kwargs):
         """Process view with enhanced CSRF protection and logging"""
-        # Get the result from parent CSRF middleware
         result = super().process_view(request, callback, callback_args, callback_kwargs)
         
-        # If CSRF check failed, log security event
-        if result is not None:  # CSRF failure returns a response
+        if result is not None: 
             user = getattr(request, 'user', None)
             ip_address = self._get_client_ip(request)
             

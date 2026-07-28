@@ -1,7 +1,3 @@
-"""
-Tests for security module functionality.
-Tests rate limiting, input sanitization, and identity hashing.
-"""
 import json
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model

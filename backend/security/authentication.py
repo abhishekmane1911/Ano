@@ -1,7 +1,3 @@
-"""
-Enhanced authentication service that works with hashed identities.
-Part of the Advanced Gamification Modules - Security hardening.
-"""
 import logging
 from typing import Optional
 from django.contrib.auth import get_user_model

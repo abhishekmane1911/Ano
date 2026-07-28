@@ -53,7 +53,6 @@ def migrate_user_emails_to_hash(self, batch_size=100):
         batch_size: Number of users to process in each batch
     """
     try:
-        # Find users without hashed identities
         users_without_hash = User.objects.filter(
             hashed_identity__isnull=True
         )[:batch_size]
@@ -62,10 +61,8 @@ def migrate_user_emails_to_hash(self, batch_size=100):
         
         for user in users_without_hash:
             try:
-                # Generate hash for user's email
                 email_hash, salt = IdentityHasher.hash_email(user.email)
                 
-                # Create hashed identity record
                 HashedIdentity.objects.create(
                     user=user,
                     email_hash=email_hash,
@@ -79,17 +76,15 @@ def migrate_user_emails_to_hash(self, batch_size=100):
                 logger.error(f"Error migrating email hash for user_{user.id}: {e}")
                 continue
         
-        # Check if more users need migration
         remaining_users = User.objects.filter(hashed_identity__isnull=True).count()
         
         logger.info(f"Email hash migration batch complete: {migrated_count} users migrated, "
                    f"{remaining_users} remaining")
         
-        # Schedule next batch if needed
         if remaining_users > 0:
             migrate_user_emails_to_hash.apply_async(
                 args=[batch_size],
-                countdown=60  # Wait 1 minute before next batch
+                countdown=60 
             )
         
         return {
@@ -110,20 +105,16 @@ def analyze_security_events(self):
     Identifies potential security threats and suspicious activity.
     """
     try:
-        # Analyze events from the last 24 hours
         cutoff_time = timezone.now() - timedelta(hours=24)
         recent_events = SecurityEvent.objects.filter(created_at__gte=cutoff_time)
         
-        # Count events by type
         event_counts = {}
         for event in recent_events:
             event_type = event.event_type
             event_counts[event_type] = event_counts.get(event_type, 0) + 1
         
-        # Identify suspicious patterns
         suspicious_patterns = []
         
-        # High rate limit violations
         if event_counts.get('rate_limit_exceeded', 0) > 100:
             suspicious_patterns.append({
                 'type': 'high_rate_limit_violations',
@@ -131,7 +122,6 @@ def analyze_security_events(self):
                 'severity': 'medium'
             })
         
-        # Multiple XSS attempts
         if event_counts.get('xss_attempt', 0) > 10:
             suspicious_patterns.append({
                 'type': 'multiple_xss_attempts',
@@ -139,7 +129,6 @@ def analyze_security_events(self):
                 'severity': 'high'
             })
         
-        # Analyze by IP address
         ip_analysis = {}
         for event in recent_events.filter(severity__in=['high', 'critical']):
             ip = event.ip_address
@@ -149,22 +138,19 @@ def analyze_security_events(self):
                 ip_analysis[ip]['count'] += 1
                 ip_analysis[ip]['events'].append(event.event_type)
         
-        # Flag IPs with multiple high-severity events
         suspicious_ips = []
         for ip, data in ip_analysis.items():
-            if data['count'] >= 5:  # 5 or more high-severity events
+            if data['count'] >= 5: 
                 suspicious_ips.append({
                     'ip_address': ip,
                     'event_count': data['count'],
                     'event_types': list(set(data['events']))
                 })
         
-        # Log analysis results
         if suspicious_patterns or suspicious_ips:
             logger.warning(f"Security analysis found {len(suspicious_patterns)} patterns "
                          f"and {len(suspicious_ips)} suspicious IPs")
             
-            # Create summary security event
             SecurityEvent.objects.create(
                 event_type='security_analysis',
                 severity='medium',
@@ -198,15 +184,12 @@ def cleanup_security_events(self):
     try:
         cutoff_time = timezone.now() - timedelta(days=30)
         
-        # Keep critical events longer (90 days)
         critical_cutoff = timezone.now() - timedelta(days=90)
         
-        # Delete old non-critical events
         old_events = SecurityEvent.objects.filter(
             timestamp__lt=cutoff_time
         ).exclude(severity='critical')
 
-        # Delete very old critical events
         old_critical_events = SecurityEvent.objects.filter(
             timestamp__lt=critical_cutoff,
             severity='critical'
@@ -248,14 +231,12 @@ def reset_rate_limit_cache(self, user_id=None, action_type=None):
         reset_count = 0
         
         if user_id and action_type:
-            # Reset specific user/action combination
             cache_key = f"rate_limit:{user_id}:{action_type}"
             if cache.delete(cache_key):
                 reset_count = 1
                 logger.info(f"Reset rate limit cache for user_{user_id}, action: {action_type}")
         
         elif user_id:
-            # Reset all actions for specific user
             for action in RateLimitService.RATE_LIMITS.keys():
                 cache_key = f"rate_limit:{user_id}:{action}"
                 if cache.delete(cache_key):
@@ -263,12 +244,10 @@ def reset_rate_limit_cache(self, user_id=None, action_type=None):
             logger.info(f"Reset all rate limit cache entries for user_{user_id}")
         
         elif action_type:
-            # Reset specific action for all users (more complex, not implemented)
             logger.warning("Resetting action type for all users not implemented")
         
         else:
-            # Clear all rate limit cache (use with caution)
-            # This would require iterating through all possible keys
+
             logger.warning("Full rate limit cache reset not implemented for safety")
         
         return {'reset_count': reset_count}
@@ -284,23 +263,20 @@ def generate_security_report():
     Generate security system report for monitoring and compliance.
     """
     try:
-        # Get security statistics for the last 24 hours
         cutoff_time = timezone.now() - timedelta(hours=24)
         recent_events = SecurityEvent.objects.filter(created_at__gte=cutoff_time)
         
-        # Count events by severity
         severity_counts = {}
         for severity in ['low', 'medium', 'high', 'critical']:
             count = recent_events.filter(severity=severity).count()
             severity_counts[severity] = count
         
-        # Count events by type
         event_type_counts = {}
         for event in recent_events:
             event_type = event.event_type
             event_type_counts[event_type] = event_type_counts.get(event_type, 0) + 1
         
-        # Rate limiting statistics
+        # Rate limiting stats
         recent_rate_limits = RateLimitRecord.objects.filter(
             timestamp__gte=cutoff_time
         )

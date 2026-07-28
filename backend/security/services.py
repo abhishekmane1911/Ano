@@ -30,7 +30,6 @@ class RateLimitService:
         
         max_requests, time_window = cls.RATE_LIMITS[action_type]
         
-        # Handle anonymous users - use IP-based rate limiting
         if not user or not user.is_authenticated:
             cache_key = f"rate_limit:anonymous:{ip_address}:{action_type}"
         else:
@@ -39,7 +38,6 @@ class RateLimitService:
         current_count = cache.get(cache_key, 0)
         
         if current_count >= max_requests:
-            # Log rate limit exceeded
             SecurityEvent.objects.create(
                 user=user if user and user.is_authenticated else None,
                 event_type='rate_limit_exceeded',
@@ -49,10 +47,8 @@ class RateLimitService:
             )
             return False
         
-        # Increment counter
         cache.set(cache_key, current_count + 1, time_window)
         
-        # Also record in database for audit (only for authenticated users)
         if user and user.is_authenticated:
             RateLimitRecord.objects.create(
                 user=user,
@@ -70,9 +66,7 @@ class RateLimitService:
         
         max_requests, _ = cls.RATE_LIMITS[action_type]
         
-        # Handle anonymous users
         if not user or not user.is_authenticated:
-            # For anonymous users, we can't track remaining requests accurately
             return max_requests
         
         cache_key = f"rate_limit:{user.id}:{action_type}"
@@ -84,7 +78,6 @@ class RateLimitService:
 class InputSanitizer:
     """Service for sanitizing user input"""
     
-    # Patterns for detecting malicious content
     XSS_PATTERNS = [
         r'<script[^>]*>.*?</script>',
         r'javascript:',
@@ -100,7 +93,6 @@ class InputSanitizer:
         if not content:
             return content
         
-        # Remove potentially dangerous HTML tags and attributes
         for pattern in cls.XSS_PATTERNS:
             content = re.sub(pattern, '', content, flags=re.IGNORECASE | re.DOTALL)
         
@@ -112,7 +104,6 @@ class InputSanitizer:
         if not content:
             return content
         
-        # Escape common JavaScript injection patterns
         content = content.replace('<', '&lt;')
         content = content.replace('>', '&gt;')
         content = content.replace('"', '&quot;')
@@ -131,7 +122,6 @@ class InputSanitizer:
         """Check for malicious patterns and log if found"""
         for pattern in cls.XSS_PATTERNS:
             if re.search(pattern, content, re.IGNORECASE):
-                # Log security event
                 SecurityEvent.objects.create(
                     user=user if user and user.is_authenticated else None,
                     event_type='xss_attempt',

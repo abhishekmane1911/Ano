@@ -8,7 +8,6 @@ User = get_user_model()
 
 
 class RateLimitRecord(models.Model):
-    """Track user actions for rate limiting"""
     
     ACTION_TYPES = [
         ('post_creation', 'Post Creation'),
