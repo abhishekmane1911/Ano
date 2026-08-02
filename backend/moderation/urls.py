@@ -8,7 +8,6 @@ from . import views
 app_name = 'moderation'
 
 urlpatterns = [
-    # API endpoints
     path('api/', views.ModerationStatusAPIView.as_view(), name='moderation-status'),
     path('api/heat/', views.HeatSystemAPIView.as_view(), name='heat-system'),
     path('api/report/', views.ReportContentAPIView.as_view(), name='report-content'),

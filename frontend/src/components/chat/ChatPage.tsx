@@ -62,34 +62,32 @@ const ChatPage: React.FC = () => {
           )}
         </AnimatePresence>
 
-        <AnimatePresence mode="wait">
-          {selectedChatroomId ? (
-            <motion.div
-              key="chat-window"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className={`flex-1 h-full ${isMobile ? 'absolute inset-0 mobile:relative' : ''}`}
-            >
-              <ChatWindow chatroomId={selectedChatroomId} onBack={handleBackToList} />
-            </motion.div>
-          ) : (
-            <div className="hidden md:flex flex-1 items-center justify-center h-full">
-              <div className="text-center max-w-xs">
-                <div className="w-10 h-10 mx-auto mb-4 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-500">
-                  <MessageSquare size={18} strokeWidth={1.75} />
-                </div>
-                <h2 className="text-base font-medium text-zinc-100 mb-1">
-                  No room selected
-                </h2>
-                <p className="text-sm text-zinc-400">
-                  Choose a room from the list to start chatting.
-                </p>
+        {selectedChatroomId ? (
+          <motion.div
+            key={selectedChatroomId}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            className={`flex-1 h-full ${isMobile ? 'absolute inset-0 mobile:relative' : ''}`}
+          >
+            <ChatWindow chatroomId={selectedChatroomId} onBack={handleBackToList} />
+          </motion.div>
+        ) : (
+          <div className="hidden md:flex flex-1 items-center justify-center h-full">
+            <div className="text-center max-w-xs">
+              <div className="w-10 h-10 mx-auto mb-4 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-500">
+                <MessageSquare size={18} strokeWidth={1.75} />
               </div>
+              <h2 className="text-base font-medium text-zinc-100 mb-1">
+                No room selected
+              </h2>
+              <p className="text-sm text-zinc-400">
+                Choose a room from the list to start chatting.
+              </p>
             </div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
       </div>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>

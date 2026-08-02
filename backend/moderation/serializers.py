@@ -7,7 +7,6 @@ from .models import ViolationHistory, Shadowban, ModerationResult
 
 
 class ViolationHistorySerializer(serializers.ModelSerializer):
-    """Serializer for violation history"""
     
     class Meta:
         model = ViolationHistory
@@ -19,7 +18,6 @@ class ViolationHistorySerializer(serializers.ModelSerializer):
 
 
 class ShadowbanSerializer(serializers.ModelSerializer):
-    """Serializer for shadowban information"""
     
     time_remaining = serializers.SerializerMethodField()
     
@@ -32,7 +30,6 @@ class ShadowbanSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
     
     def get_time_remaining(self, obj):
-        """Calculate time remaining in shadowban"""
         if not obj.is_active or obj.is_expired():
             return None
         
@@ -46,7 +43,6 @@ class ShadowbanSerializer(serializers.ModelSerializer):
 
 
 class ModerationResultSerializer(serializers.ModelSerializer):
-    """Serializer for moderation results"""
     
     class Meta:
         model = ModerationResult
@@ -58,7 +54,6 @@ class ModerationResultSerializer(serializers.ModelSerializer):
 
 
 class HeatInfoSerializer(serializers.Serializer):
-    """Serializer for heat system information"""
     
     heat_level = serializers.IntegerField()
     heat_name = serializers.CharField()
@@ -72,7 +67,6 @@ class HeatInfoSerializer(serializers.Serializer):
 
 
 class ReportContentSerializer(serializers.Serializer):
-    """Serializer for content reporting"""
     
     content_type = serializers.ChoiceField(choices=['message', 'post', 'comment'])
     content_id = serializers.IntegerField()

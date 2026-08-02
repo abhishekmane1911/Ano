@@ -8,5 +8,4 @@ from .tasks import moderate_message_async
 def moderate_new_message(sender, instance, created, **kwargs):
     """Trigger moderation for new messages"""
     if created and not instance.is_deleted:
-        # Queue message for asynchronous moderation
         moderate_message_async.delay(instance.id)

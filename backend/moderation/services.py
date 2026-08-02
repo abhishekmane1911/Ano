@@ -43,13 +43,8 @@ logger = logging.getLogger(__name__)
 
 
 class HeatSystem:
-    """
-    Advanced heat tracking system for repeat offenders.
-    Implements escalating penalties and rehabilitation mechanisms.
-    """
     _settings = getattr(settings, 'MODERATION_SETTINGS', {})
     
-    # Heat level thresholds
     HEAT_LEVELS = _settings.get('HEAT_LEVELS', {
         0: {'name': 'Clean', 'multiplier': 1.0, 'max_violations': 0},
         1: {'name': 'Warm', 'multiplier': 1.2, 'max_violations': 1},
@@ -59,18 +54,15 @@ class HeatSystem:
         5: {'name': 'Inferno', 'multiplier': 5.0, 'max_violations': float('inf')},
     })
     
-    # Rehabilitation parameters
     REHABILITATION_PERIOD_DAYS = _settings.get('REHABILITATION_PERIOD_DAYS', 14)  # Days of good behavior to reduce heat
     GOOD_BEHAVIOR_THRESHOLD = _settings.get('GOOD_BEHAVIOR_THRESHOLD', 10)    # Positive actions needed for rehabilitation
     
     @classmethod
     def clear_heat_cache(cls, user: User):
-        """Clear the heat level cache for a user"""
         cache.delete(f"user_heat_level_{user.id}")
 
     @classmethod
     def get_user_heat_level(cls, user: User) -> int:
-        """Calculate user's current heat level based on recent violations"""
         cache_key = f"user_heat_level_{user.id}"
         cached_level = cache.get(cache_key)
         
@@ -94,7 +86,6 @@ class HeatSystem:
     
     @classmethod
     def get_heat_info(cls, user: User) -> Dict:
-        """Get comprehensive heat information for a user"""
         heat_level = cls.get_user_heat_level(user)
         heat_info = cls.HEAT_LEVELS[heat_level].copy()
         
@@ -129,12 +120,9 @@ class HeatSystem:
     
     @classmethod
     def _calculate_rehabilitation_progress(cls, user: User) -> float:
-        """Calculate rehabilitation progress as a percentage (0-100)"""
-        # Check for good behavior in the last rehabilitation period
+
         cutoff_date = timezone.now() - timedelta(days=cls.REHABILITATION_PERIOD_DAYS)
         
-        # Count positive actions
-        # For now we'll use a simple metric: days without violations
         last_violation = ViolationHistory.objects.filter(
             user=user,
             created_at__gte=cutoff_date
@@ -152,7 +140,6 @@ class HeatSystem:
     
     @classmethod
     def _get_next_level_threshold(cls, current_level: int) -> Optional[int]:
-        """Get the number of violations needed to reach the next heat level"""
         if current_level >= 5:
             return None  
         
@@ -160,7 +147,6 @@ class HeatSystem:
     
     @classmethod
     def apply_heat_penalty(cls, user: User, base_duration_hours: int, toxicity_score: float) -> int:
-        """Apply heat-based penalty multiplier to base duration"""
         heat_level = cls.get_user_heat_level(user)
         multiplier = cls.HEAT_LEVELS[heat_level]['multiplier']
         
@@ -180,7 +166,6 @@ class HeatSystem:
     
     @classmethod
     def attempt_rehabilitation(cls, user: User) -> bool:
-        """Attempt to rehabilitate user by reducing their heat level"""
         heat_info = cls.get_heat_info(user)
         
         if not heat_info['can_rehabilitate']:
@@ -202,7 +187,6 @@ class HeatSystem:
     
     @classmethod
     def get_escalation_warning(cls, user: User) -> Optional[str]:
-        """Get warning message about potential escaltaion"""
         heat_info = cls.get_heat_info(user)
         heat_level = heat_info['heat_level']
         
@@ -220,9 +204,7 @@ class HeatSystem:
             return "Maximum penalty level reached. All future violations will receive the harshest penalties."
 
 
-class OpenAIModerator:
-    """OpenAI-based content moderation service with circuit breaker protection"""
-    
+class OpenAIModerator:    
     def __init__(self):
         self.client = None
         self.available = OPENAI_AVAILABLE
@@ -242,15 +224,7 @@ class OpenAIModerator:
     
     @monitor_async_operation("openai_moderation")
     def check_content(self, content: str) -> Dict:
-        """
-        Check content using OpenAI Moderation API with circuit breaker protection
-        Returns: {
-            'flagged': bool,
-            'categories': List[str],
-            'toxicity_score': float,
-            'category_scores': Dict[str, float]
-        }
-        """
+
         if not self.available or not self.client:
             return {
                 'flagged': False,
@@ -284,11 +258,9 @@ class OpenAIModerator:
             }
     
     def _make_openai_request(self, content: str) -> Dict:
-        """Make the actual OpenAI API request (protected by circuit breaker)"""
         response = self.client.moderations.create(input=content)
         result = response.results[0]
         
-        # Extract flagged categories
         flagged_categories = []
         category_scores = {}
         
@@ -312,7 +284,6 @@ class OpenAIModerator:
 
 
 class LocalModerator:
-    """Local AI moderation using better-profanity and vaderSentiment"""
     
     def __init__(self):
         self.profanity_available = PROFANITY_AVAILABLE
@@ -397,11 +368,8 @@ class LocalModerator:
             }
     
     def _check_harmful_patterns(self, content: str) -> List[str]:
-        """Check for specific harmful patterns"""
         categories = []
         
-        # Only flag extremely severe offline patterns to prevent false positives
-        # from casual college banter (e.g. avoiding banning for "idiot" or "skill")
         severe_patterns = [
             r'\bsuicide\b',
             r'\brape\b',
@@ -424,7 +392,6 @@ class LocalModerator:
 
 
 class ModerationService:
-    """Enhanced service for AI content moderation with heat system integration"""
     
     def __init__(self):
         from django.conf import settings
@@ -436,17 +403,17 @@ class ModerationService:
         self.block_harassment = self.settings.get('BLOCK_HARASSMENT', False)
         
         self.openai_moderator = OpenAIModerator()
+        # temp disable
+        self.openai_moderator.available = False
+        
         self.local_moderator = LocalModerator()
         self.heat_system = HeatSystem()
     
     @classmethod
     def moderate_content(cls, message: Message) -> ModerationResult:
-        """Moderate message content using AI with heat system integration"""
         service = cls()
         
-        # Check if enabled
         if not service.enabled:
-            # if disabled approve all messages
             return ModerationResult.objects.create(
                 message=message,
                 user=message.sender.user,
@@ -468,7 +435,6 @@ class ModerationService:
                     moderation_result['categories']
                 )
             
-            # Create moderation result record
             result = ModerationResult.objects.create(
                 message=message,
                 user=message.sender.user,
@@ -481,7 +447,6 @@ class ModerationService:
             
         except Exception as e:
             logger.error(f"Error moderating message {message.id}: {e}")
-            # Default to approved if moderation fails
             return ModerationResult.objects.create(
                 message=message,
                 user=message.sender.user,
@@ -491,7 +456,6 @@ class ModerationService:
             )
     
     def _get_moderation_result(self, content: str) -> Dict:
-        """Get moderation result with fallback logic"""
         
         if self.openai_moderator.available:
             openai_result = self.openai_moderator.check_content(content)
@@ -506,11 +470,9 @@ class ModerationService:
         return local_result
     
     def _determine_action(self, moderation_result: Dict) -> str:
-        """Determine action based on moderation result and settings"""
         toxicity_score = moderation_result.get('toxicity_score', 0.0)
         categories = moderation_result.get('categories', [])
         
-        # Check if specific categories should be blocked based on settings
         if self.block_violence and 'violence' in categories:
             return 'rejected'
         
@@ -526,9 +488,7 @@ class ModerationService:
         return 'approved'
     
     def _handle_violation(self, user: User, toxicity_score: float, content: str, categories: List[str]):
-        """Handle content violation with heat system integration"""
-        # Determine violation type based on categories
-        violation_type = 'toxicity'  # default
+        violation_type = 'toxicity'  
         if 'violence' in categories:
             violation_type = 'violence'
         elif 'self_harm' in categories:
@@ -538,7 +498,6 @@ class ModerationService:
         elif 'spam' in categories:
             violation_type = 'spam'
         
-        # Create violation record
         violation = ViolationHistory.objects.create(
             user=user,
             violation_type=violation_type,
@@ -549,13 +508,11 @@ class ModerationService:
         
         self.heat_system.clear_heat_cache(user)
         
-        # Apply heat-based penalties
         base_duration = 24  
         duration_hours = self.heat_system.apply_heat_penalty(user, base_duration, toxicity_score)
         
         self._apply_shadowban(user, duration_hours, f"Content violation: {violation_type} (score: {toxicity_score})")
         
-        # Deduct reputation points
         try:
             from reputation.services import ReputationService
             ReputationService.award_points(user, 'validated_report')
@@ -565,15 +522,12 @@ class ModerationService:
         heat_info = self.heat_system.get_heat_info(user)
         logger.info(f"User {user.id} heat level: {heat_info['heat_level']} ({heat_info['heat_name']})")
         
-        # Broadcast realtime moderation notification
         self._broadcast_moderation_notification(user, violation_type, toxicity_score, duration_hours)
     
     def _broadcast_moderation_notification(self, user: User, violation_type: str, toxicity_score: float, duration_hours: int):
-        """Broadcast moderation notification via WebSocket"""
         try:
             from reputation.websocket_utils import realtime_notifier
             
-            # Send notification to the user
             realtime_notifier.broadcast_moderation_notification(
                 user_id=user.id,
                 notification_type='content_rejected',
@@ -590,9 +544,7 @@ class ModerationService:
     
     @classmethod
     def _apply_shadowban(cls, user: User, duration_hours: int, reason: str):
-        """Apply shadowban to user"""
         with transaction.atomic():
-            # Check for existing active shadowban with lock to prevent race conditions
             existing_ban = Shadowban.objects.select_for_update().filter(
                 user=user,
                 is_active=True,
@@ -600,12 +552,10 @@ class ModerationService:
             ).first()
             
             if existing_ban:
-                # Extend existing shadowban
                 existing_ban.expires_at += timedelta(hours=duration_hours)
                 existing_ban.save(update_fields=['expires_at'])
                 logger.info(f"Extended shadowban for user {user.id} by {duration_hours} hours")
             else:
-                # Create new shadowban
                 Shadowban.objects.create(
                     user=user,
                     reason=reason,
@@ -613,12 +563,10 @@ class ModerationService:
                 )
                 logger.info(f"Applied {duration_hours}h shadowban to user {user.id}")
         
-        # Broadcast shadowban notification
         cls._broadcast_shadowban_notification(user, duration_hours, reason)
     
     @classmethod
     def _broadcast_shadowban_notification(cls, user: User, duration_hours: int, reason: str):
-        """Broadcast shadowban notification via WebSocket"""
         try:
             from reputation.websocket_utils import realtime_notifier
             
@@ -637,7 +585,6 @@ class ModerationService:
     
     @classmethod
     def is_user_shadowbanned(cls, user: User) -> bool:
-        """Check if user is currently shadowbanned"""
         return Shadowban.objects.filter(
             user=user,
             is_active=True,
@@ -646,15 +593,12 @@ class ModerationService:
     
     @classmethod
     def get_user_heat_level(cls, user: User) -> int:
-        """Get user's current heat level (delegated to HeatSystem)"""
         return HeatSystem.get_user_heat_level(user)
     
     @classmethod
     def get_user_heat_info(cls, user: User) -> Dict:
-        """Get comprehensive heat information for user"""
         return HeatSystem.get_heat_info(user)
     
     @classmethod
     def attempt_user_rehabilitation(cls, user: User) -> bool:
-        """Attempt to rehabilitate user by reducing heat level"""
         return HeatSystem.attempt_rehabilitation(user)

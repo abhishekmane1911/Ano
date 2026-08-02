@@ -23,16 +23,13 @@ class ModerationStatusAPIView(APIView):
         """Get comprehensive moderation status for current user"""
         user = request.user
         
-        # Get heat system information
         heat_info = HeatSystem.get_heat_info(user)
         
-        # Get recent violations
         recent_violations = ViolationHistory.objects.filter(
             user=user,
             is_active=True
         ).order_by('-created_at')[:5]
         
-        # Get active shadowban
         active_shadowban = Shadowban.objects.filter(
             user=user,
             is_active=True,
@@ -88,7 +85,7 @@ class ReportContentAPIView(APIView):
     
     def post(self, request):
         """Report content for moderation"""
-        content_type = request.data.get('content_type')  # 'message', 'post', etc.
+        content_type = request.data.get('content_type') 
         content_id = request.data.get('content_id')
         reason = request.data.get('reason', 'inappropriate')
         description = request.data.get('description', '')
@@ -117,7 +114,6 @@ class UserViolationsAPIView(APIView):
         violations = ViolationHistory.objects.filter(user=user).order_by('-created_at')
         total_count = violations.count()
         
-        # Simple pagination
         start = (page - 1) * page_size
         end = start + page_size
         page_violations = violations[start:end]
@@ -165,7 +161,6 @@ class ModerationStatsAPIView(APIView):
         from django.utils import timezone
         from datetime import timedelta
         
-        # Get statistics for the last 30 days
         cutoff_date = timezone.now() - timedelta(days=30)
         
         total_users = User.objects.count()
@@ -182,13 +177,11 @@ class ModerationStatsAPIView(APIView):
             created_at__gte=cutoff_date
         ).count()
         
-        # Heat level distribution
         heat_distribution = {str(i): 0 for i in range(6)}
         for user in User.objects.filter(violations__is_active=True).distinct():
             heat_level = HeatSystem.get_user_heat_level(user)
             heat_distribution[str(heat_level)] += 1
         
-        # Moderation action distribution
         action_stats = {}
         for result in ModerationResult.objects.filter(processed_at__gte=cutoff_date):
             action = result.action_taken

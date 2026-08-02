@@ -13,7 +13,6 @@ from .models import UserReputation, MessageRanking, Vote
 from .services import ReputationService, WilsonScoreCalculator
 from chat.models import Message
 
-# Import monitoring functionality
 from ano_backend.monitoring import monitor_async_operation
 
 logger = logging.getLogger('ano_platform')

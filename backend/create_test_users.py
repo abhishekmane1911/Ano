@@ -13,9 +13,27 @@ from profiles.models import Profile
 User = get_user_model()
 
 users_data = [
-    {"email": "cse220001001@iiti.ac.in", "score": 150, "tier": "Sophomore"},
-    {"email": "cse220001002@iiti.ac.in", "score": 600, "tier": "Senior"},
-    {"email": "cse220001003@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+    # {"email": "cse220001001@iiti.ac.in", "score": 150, "tier": "Sophomore"},
+    # {"email": "cse220001002@iiti.ac.in", "score": 600, "tier": "Senior"},
+    # {"email": "cse220001003@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+     {"email": "cse220001004@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+      {"email": "cse220001005@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+       {"email": "cse220001006@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+        {"email": "cse220001007@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+         {"email": "cse220001008@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+          {"email": "cse220001009@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+           {"email": "cse220001010@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+            {"email": "cse220001011@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+             {"email": "cse220001012@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+              {"email": "cse220001013@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+               {"email": "cse220001014@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                {"email": "cse220001015@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                 {"email": "cse220001016@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                  {"email": "cse220001017@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                   {"email": "cse220001018@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                    {"email": "cse220001019@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                     {"email": "cse220001020@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
+                      {"email": "cse220001021@iiti.ac.in", "score": 1200, "tier": "Campus Legend"},
 ]
 
 password = "TestPass123!"

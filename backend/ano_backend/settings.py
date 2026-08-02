@@ -39,21 +39,14 @@ DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-# Performance Optimization Settings
 if not DEBUG:
-    # Database connection pooling for production
-    CONN_MAX_AGE = 600  # 10 minutes
-    
-    # Disable debug toolbar in production
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda request: False,
     }
     
-    # Session optimization
     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
     SESSION_CACHE_ALIAS = 'default'
     
-    # Static files optimization
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 
@@ -230,12 +223,11 @@ CORS_ALLOW_HEADERS = [
 ]
 CORS_EXPOSE_HEADERS = ['content-type', 'x-csrftoken']
 
-# CSRF Settings
 CSRF_TRUSTED_ORIGINS = os.getenv(
     "CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 ).split(",")
 
-# Channels
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -245,7 +237,6 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Celery config
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -253,7 +244,6 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# Email config
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 EMAIL_FILE_PATH = os.getenv("EMAIL_FILE_PATH", "/tmp/app-messages")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
@@ -270,17 +260,14 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
 ]
 
-# auth Backends
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    
 ]
 
-# Security settings
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-# Production Security Settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True") == "True"
     SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", 31536000))
@@ -288,7 +275,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "True") == "True"
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Cookie Security
 SESSION_COOKIE_SECURE = not DEBUG  
 CSRF_COOKIE_SECURE = not DEBUG     
 SESSION_COOKIE_HTTPONLY = True
@@ -296,7 +282,6 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 
-# Database Connection Pooling (for production)
 if not DEBUG:
     DATABASES["default"]["CONN_MAX_AGE"] = 600 
     DATABASES["default"]["OPTIONS"] = {
@@ -306,22 +291,18 @@ if not DEBUG:
 
 
 
-# File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  
 FILE_UPLOAD_PERMISSIONS = 0o644
 MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
-# Additional Security Headers
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 AUTH_USER_MODEL = 'authentication.User'
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-# Advanced Gamification Modules Configuration
 
-# Reputation System Settings
 REPUTATION_SETTINGS = {
     'POINTS': {
         'message_upvote': 5,
@@ -335,7 +316,6 @@ REPUTATION_SETTINGS = {
     }
 }
 
-# Moderation System Settings
 MODERATION_SETTINGS = {
     'ENABLED': os.getenv('MODERATION_ENABLED', 'True') == 'True',
     'TOXICITY_THRESHOLD': float(os.getenv('MODERATION_TOXICITY_THRESHOLD', '0.85')),
@@ -347,7 +327,6 @@ MODERATION_SETTINGS = {
     'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
 }
 
-# Security System Settings
 SECURITY_SETTINGS = {
     'RATE_LIMITS': {
         'post_creation': (5, 600),  # 5 posts per 10 min
@@ -360,7 +339,7 @@ SECURITY_SETTINGS = {
     'IDENTITY_HASHING_ENABLED': True,
 }
 
-# Cache Configuration (for rate limiting and performance)
+# rate limiting and caching
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',

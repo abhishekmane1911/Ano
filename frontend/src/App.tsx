@@ -76,7 +76,7 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
         {/* Public routes */}
         <Route path="/landing" element={<PublicRoute><PageTransition><LandingPage /></PageTransition></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><PageTransition><SignupForm /></PageTransition></PublicRoute>} />

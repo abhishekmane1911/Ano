@@ -38,6 +38,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevHeightRef = useRef<number>(0);
+  const initialScrollDone = useRef<boolean>(false);
+  const scrollCooldownRef = useRef<boolean>(false);
 
   useEffect(() => {
     const initProfile = async () => {
@@ -68,6 +70,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
   }, [chatroomId]);
 
   useEffect(() => {
+    initialScrollDone.current = false;
     setHasMoreMessages(true);
     loadMessages(1, true, sortMode);
   }, [chatroomId, sortMode]);
@@ -92,18 +95,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
       if (isInitial) {
         setMessages(chatroomId, messagesToSet);
         if (currentSortMode === 'live') {
-          setTimeout(scrollToBottom, 100);
+          setTimeout(() => {
+            scrollToBottom(false);
+            initialScrollDone.current = true;
+          }, 100);
         } else {
           setTimeout(() => {
             if (containerRef.current) containerRef.current.scrollTop = 0;
+            initialScrollDone.current = true;
           }, 100);
         }
       } else {
         if (currentSortMode === 'live') {
+          // Capture height BEFORE prepend so the DOM hasn't changed yet
+          const heightBefore = containerRef.current?.scrollHeight ?? 0;
           prependMessages(chatroomId, messagesToSet);
-          if (containerRef.current) {
-            containerRef.current.scrollTop = containerRef.current.scrollHeight - prevHeightRef.current;
-          }
+          // Restore position after the DOM has updated
+          requestAnimationFrame(() => {
+            if (containerRef.current) {
+              containerRef.current.scrollTop = containerRef.current.scrollHeight - heightBefore;
+            }
+          });
         } else {
           const existing = useChatStore.getState().messages[chatroomId] || [];
           setMessages(chatroomId, [...existing, ...messagesToSet]);
@@ -114,11 +126,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
       setHasMoreMessages(false);
     } finally {
       setLoadingMore(false);
+      // Block scroll handler briefly so the position restore doesn't retrigger a load
+      scrollCooldownRef.current = true;
+      setTimeout(() => { scrollCooldownRef.current = false; }, 300);
     }
   };
 
   const handleScroll = useCallback(() => {
-    if (!containerRef.current || loadingMore || !hasMoreMessages) return;
+    if (!initialScrollDone.current || scrollCooldownRef.current || !containerRef.current || loadingMore || !hasMoreMessages) return;
     
     if (sortMode === 'live') {
       if (containerRef.current.scrollTop < 100) {
@@ -135,7 +150,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatroomId, onBack }) => {
     }
   }, [loadingMore, hasMoreMessages, chatroomId, messages, sortMode]);
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (smooth = true) => messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   const chatroomMessages = messages[chatroomId] || [];
 
   const handlePinMessage = async (messageId: string, isPinned: boolean) => {

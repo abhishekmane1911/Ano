@@ -13,7 +13,6 @@ import os
 from django.conf import settings
 from rest_framework.throttling import ScopedRateThrottle
 
-# Import privilege enforcement decorators
 from reputation.services import require_privilege_drf
 
 from .models import Chatroom, Message, MessageReaction, ReadReceipt, Poll, PollVote, Confession
@@ -36,14 +35,12 @@ from matchmaking.models import Match
 
 
 class MessagePagination(PageNumberPagination):
-    """Pagination for messages with infinite scroll support"""
     page_size = 50
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
 class ChatroomViewSet(viewsets.ModelViewSet):
-    """ViewSet for Chatroom operations"""
     
     queryset = Chatroom.objects.filter(is_active=True)
     serializer_class = ChatroomSerializer
@@ -52,26 +49,21 @@ class ChatroomViewSet(viewsets.ModelViewSet):
     throttle_scope = None
     
     def list(self, request):
-        """List all active chatrooms"""
         chatrooms = self.get_queryset()
         serializer = self.get_serializer(chatrooms, many=True)
         return Response(serializer.data)
     
     def retrieve(self, request, pk=None):
-        """Get chatroom details"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         serializer = self.get_serializer(chatroom)
         return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
-        """Get paginated messages for a chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         
-        # Get ordering parameter
         ordering = request.query_params.get('ordering', 'created_at')
         
-        # Base queryset
         messages = Message.objects.filter(
             chatroom=chatroom,
             is_deleted=False
@@ -82,28 +74,31 @@ class ChatroomViewSet(viewsets.ModelViewSet):
         
         # Apply ordering based on parameter
         if ordering == 'wilson_score':
-            # Order by Wilson Score (highest first)
+           
             try:
-                from reputation.models import MessageRanking
-                messages = messages.select_related('ranking').order_by('-ranking__wilson_score', '-created_at')
+                from django.db.models.functions import Coalesce
+                messages = messages.annotate(
+                    actual_wilson_score=Coalesce('ranking__wilson_score', 0.0)
+                ).order_by('-actual_wilson_score', '-created_at')
             except ImportError:
-                # Fallback to created_at if reputation app not available
                 messages = messages.order_by('-created_at')
         elif ordering == 'upvotes':
-            # Order by upvote count
             try:
-                from reputation.models import MessageRanking
-                messages = messages.select_related('ranking').order_by('-ranking__upvotes', '-created_at')
+                from django.db.models.functions import Coalesce
+                messages = messages.annotate(
+                    actual_upvotes=Coalesce('ranking__upvotes', 0)
+                ).order_by('-actual_upvotes', '-created_at')
             except ImportError:
                 messages = messages.order_by('-created_at')
         elif ordering == 'controversial':
             # Order by most controversial (high total votes, low Wilson Score)
             try:
-                from reputation.models import MessageRanking
                 from django.db.models import F
-                messages = messages.select_related('ranking').annotate(
-                    total_votes=F('ranking__upvotes') + F('ranking__downvotes')
-                ).filter(total_votes__gt=5).order_by('ranking__wilson_score', '-total_votes')
+                from django.db.models.functions import Coalesce
+                messages = messages.annotate(
+                    total_votes=Coalesce(F('ranking__upvotes') + F('ranking__downvotes'), 0),
+                    actual_wilson=Coalesce('ranking__wilson_score', 0.0)
+                ).filter(total_votes__gt=5).order_by('actual_wilson', '-total_votes')
             except ImportError:
                 messages = messages.order_by('-created_at')
         else:
@@ -121,7 +116,6 @@ class ChatroomViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
-        """Send a message to a chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         
        
@@ -149,7 +143,6 @@ class ChatroomViewSet(viewsets.ModelViewSet):
     @require_privilege_drf('upload_images')
     @action(detail=True, methods=['post'], url_path='upload_media', throttle_scope='chatroom_media_upload')
     def upload_media(self, request, pk=None):
-        """Upload media file for chatroom"""
         chatroom = get_object_or_404(Chatroom, pk=pk, is_active=True)
         
         try:
@@ -283,7 +276,6 @@ class ChatroomViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ViewSet):
-    """ViewSet for Message operations"""
     
     permission_classes = [IsAuthenticated]
     
@@ -291,7 +283,6 @@ class MessageViewSet(viewsets.ViewSet):
         """Edit a message"""
         message = get_object_or_404(Message, pk=pk)
         
-        # Get user's profile
         try:
             profile = request.user.profile
         except:
@@ -300,14 +291,12 @@ class MessageViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if user is the sender
         if message.sender != profile:
             return Response(
                 {'error': 'You can only edit your own messages.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Check if message is already deleted
         if message.is_deleted:
             return Response(
                 {'error': 'Cannot edit a deleted message.'},

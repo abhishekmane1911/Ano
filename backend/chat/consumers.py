@@ -49,27 +49,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         await self.accept()
         
-        await self.channel_layer.group_send(
-            self.chatroom_group_name,
-            {
-                'type': 'user_join',
-                'profile_id': str(self.profile.anonymous_id),
-                'timestamp': time.time()
-            }
-        )
+        # await self.channel_layer.group_send(
+        #     self.chatroom_group_name,
+        #     {
+        #         'type': 'user_join',
+        #         'profile_id': str(self.profile.anonymous_id),
+        #         'timestamp': time.time()
+        #     }
+        # )
     
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
         if hasattr(self, 'chatroom_group_name') and hasattr(self, 'profile'):
-            # Broadcast user leave event
-            await self.channel_layer.group_send(
-                self.chatroom_group_name,
-                {
-                    'type': 'user_leave',
-                    'profile_id': str(self.profile.anonymous_id),
-                    'timestamp': time.time()
-                }
-            )
+            # await self.channel_layer.group_send(
+            #     self.chatroom_group_name,
+            #     {
+            #         'type': 'user_leave',
+            #         'profile_id': str(self.profile.anonymous_id),
+            #         'timestamp': time.time()
+            #     }
+            # )
             
             # Leave chatroom group
             await self.channel_layer.group_discard(
@@ -82,12 +81,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
             event_type = data.get('type')
-            
-            # Apply comprehensive spam detection
+
+           
             if event_type in ['message.send', 'typing.start']:
                 content = data.get('content', '') if event_type == 'message.send' else ''
                 
-                # Run spam checks
+                if len(content) > 2000:
+                    await self.send(text_data=json.dumps({'type': 'error', 'message': 'Too long'}))
+                    return
+                
+
                 is_allowed, error_message = await SpamDetectionMiddleware.check_all(
                     user_id=self.user.id,
                     chatroom_id=self.chatroom_id,
@@ -97,7 +100,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 
                 if not is_allowed:
                     if event_type == 'typing.start':
-                        # Silently ignore typing indicator rate limits
                         return
                     await self.send(text_data=json.dumps({
                         'type': 'error',
@@ -106,7 +108,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }))
                     return
             
-            # Route to appropriate handler
             if event_type == 'message.send':
                 await self.handle_message_send(data)
             elif event_type == 'message.edit':
@@ -124,7 +125,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             elif event_type == 'vote.cast':
                 await self.handle_vote_cast(data)
             elif event_type == 'ping':
-                # Handle ping/pong for connection keep-alive
                 await self.send(text_data=json.dumps({
                     'type': 'pong',
                     'timestamp': time.time()
@@ -459,21 +459,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'timestamp': event['timestamp']
             }))
     
-    async def user_join(self, event):
-        """Broadcast user join to WebSocket"""
-        await self.send(text_data=json.dumps({
-            'type': 'user.join',
-            'profile_id': event['profile_id'],
-            'timestamp': event['timestamp']
-        }))
+    # async def user_join(self, event):
+    #     """Broadcast user join to WebSocket"""
+    #     await self.send(text_data=json.dumps({
+    #         'type': 'user.join',
+    #         'profile_id': event['profile_id'],
+    #         'timestamp': event['timestamp']
+    #     }))
     
-    async def user_leave(self, event):
-        """Broadcast user leave to WebSocket"""
-        await self.send(text_data=json.dumps({
-            'type': 'user.leave',
-            'profile_id': event['profile_id'],
-            'timestamp': event['timestamp']
-        }))
+    # async def user_leave(self, event):
+    #     """Broadcast user leave to WebSocket"""
+    #     await self.send(text_data=json.dumps({
+    #         'type': 'user.leave',
+    #         'profile_id': event['profile_id'],
+    #         'timestamp': event['timestamp']
+    #     }))
     
     async def read_receipt(self, event):
         """Broadcast read receipt to WebSocket"""
