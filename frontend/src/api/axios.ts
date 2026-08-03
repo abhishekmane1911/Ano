@@ -3,16 +3,14 @@ import { useAuthStore } from '../stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// Create axios instance
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for HTTP-only cookies
+  withCredentials: true,
 });
 
-// Request interceptor to add access token
 axiosInstance.interceptors.request.use(
   (config) => {
     const accessToken = useAuthStore.getState().accessToken;
@@ -26,7 +24,6 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {

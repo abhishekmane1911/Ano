@@ -141,7 +141,6 @@ def require_privilege(action: str, return_json: bool = False):
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            # Check if user is authenticated
             if not request.user.is_authenticated:
                 if return_json:
                     return JsonResponse({
@@ -152,7 +151,6 @@ def require_privilege(action: str, return_json: bool = False):
                     from django.contrib.auth.decorators import login_required
                     return login_required(view_func)(request, *args, **kwargs)
             
-            # Check user privilege
             if not TierPrivilegeManager.check_user_privilege(request.user, action):
                 privilege_info = TierPrivilegeManager.get_privilege_info(request.user, action)
                 
@@ -173,7 +171,6 @@ def require_privilege(action: str, return_json: bool = False):
                     from django.http import HttpResponseForbidden
                     return HttpResponseForbidden(f"Access denied: {error_response['error']}")
             
-            # User has privilege, proceed with view
             return view_func(request, *args, **kwargs)
         
         return wrapper
@@ -198,15 +195,11 @@ def require_privilege_drf(action: str):
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(*args, **kwargs):
-            # Handle both function-based views and ViewSet methods
             if len(args) > 0 and hasattr(args[0], 'request'):
-                # ViewSet method - first arg is self, request is self.request
                 request = args[0].request
             elif len(args) > 0 and hasattr(args[0], 'user'):
-                # Function-based view - first arg is request
                 request = args[0]
             else:
-                # Fallback - assume first arg is request
                 request = args[0] if args else None
             
             if not request:
@@ -215,14 +208,12 @@ def require_privilege_drf(action: str):
                     'code': 'INVALID_REQUEST'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Check if user is authenticated
             if not request.user.is_authenticated:
                 return Response({
                     'error': 'Authentication required',
                     'code': 'AUTHENTICATION_REQUIRED'
                 }, status=status.HTTP_401_UNAUTHORIZED)
             
-            # Check user privilege
             if not TierPrivilegeManager.check_user_privilege(request.user, action):
                 privilege_info = TierPrivilegeManager.get_privilege_info(request.user, action)
                 
@@ -238,7 +229,6 @@ def require_privilege_drf(action: str):
                     }
                 }, status=status.HTTP_403_FORBIDDEN)
             
-            # User has privilege, proceed with view
             return view_func(*args, **kwargs)
         
         return wrapper
@@ -246,9 +236,7 @@ def require_privilege_drf(action: str):
 
 
 class ReputationService:
-    """Service for managing user reputation and points"""
     
-    # Point values for different actions
     POINTS = {
         'post_upvote': 5,
         'comment_upvote': 2,
@@ -261,7 +249,6 @@ class ReputationService:
     
     @classmethod
     def get_or_create_reputation(cls, user: User) -> UserReputation:
-        """Get or create user reputation"""
         reputation, created = UserReputation.objects.get_or_create(user=user)
         return reputation
     
@@ -277,21 +264,18 @@ class ReputationService:
             points = cls.POINTS.get(action, 0)
         
         with transaction.atomic():
-            reputation = cls.get_or_create_reputation(user)
+            cls.get_or_create_reputation(user)
+            reputation = UserReputation.objects.select_for_update().get(user=user)
             old_tier = reputation.rank_tier
             old_score = reputation.reputation_score
             
-            # Update reputation score
             reputation.reputation_score += points
             reputation.save()
             
-            # Update tier based on new score (real-time update)
             new_tier = reputation.update_tier()
             
-            # Check if tier changed
             tier_changed = old_tier != new_tier
             
-            # Prepare response with tier update info
             result = {
                 'user_id': str(user.id),
                 'old_score': old_score,
@@ -305,7 +289,6 @@ class ReputationService:
                 'xp_for_next_level': reputation.xp_for_next_level()
             }
             
-            # Add privilege information if tier changed
             if tier_changed:
                 new_privileges = TierPrivilegeManager.get_user_privileges(user)
                 tier_upgrade = cls._get_tier_hierarchy().index(new_tier) > cls._get_tier_hierarchy().index(old_tier)
@@ -313,7 +296,6 @@ class ReputationService:
                 result['new_privileges'] = new_privileges
                 result['tier_upgrade'] = tier_upgrade
                 
-                # Add tier update data for WebSocket broadcasting
                 result['tier_update'] = {
                     'user_id': str(user.id),
                     'old_tier': old_tier,
@@ -339,10 +321,10 @@ class ReputationService:
             Dict containing tier update information
         """
         with transaction.atomic():
-            reputation = cls.get_or_create_reputation(user)
+            cls.get_or_create_reputation(user)
+            reputation = UserReputation.objects.select_for_update().get(user=user)
             old_tier = reputation.rank_tier
             
-            # Force tier recalculation
             new_tier = reputation.update_tier()
             
             tier_changed = old_tier != new_tier
@@ -513,7 +495,8 @@ class VotingService:
         upvotes = votes.filter(vote_type='upvote').count()
         downvotes = votes.filter(vote_type='downvote').count()
         
-        ranking, created = MessageRanking.objects.get_or_create(message=message)
+        MessageRanking.objects.get_or_create(message=message)
+        ranking = MessageRanking.objects.select_for_update().get(message=message)
         ranking.upvotes = upvotes
         ranking.downvotes = downvotes
         ranking.update_wilson_score()
